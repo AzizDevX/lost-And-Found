@@ -1,0 +1,22 @@
+{
+  "name": "lost-and-found",
+  "version": "1.0.0",
+  "description": "lost and found application backend by aziz kammoun",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Aziz Kammoun",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.2.3",
+    "nodemon": "^3.1.14",
+    "uuid": "^13.0.0"
+  }
+}
