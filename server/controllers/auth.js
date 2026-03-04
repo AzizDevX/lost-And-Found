@@ -54,7 +54,41 @@ export async function Register(req, res) {
       message: "User registered successfully",
     });
   } catch (err) {
-    console.error(`Error In Auth.js : ${err}`);
+    console.error(`Error In Register Auth.js : ${err}`);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}
+
+export async function Login(req, res) {
+  try {
+    const user = await userModel
+      .findOne({ email: req.body.email })
+      .select("+password");
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        error: "INVALID_CREDENTIALS",
+        message: "Email or password is incorrect.",
+      });
+    }
+    const password = req.body.password;
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        error: "INVALID_CREDENTIALS",
+        message: "Email or password is incorrect.",
+      });
+    }
+    const accessToken = Access_Token(user);
+    return res.status(200).json({
+      success: true,
+      message: "Logged in successfully.",
+      accessToken,
+    });
+  } catch (err) {
+    console.error(`Error In Login Auth.js : ${err}`);
     return res.status(500).json({ message: "Internal server error" });
   }
 }
