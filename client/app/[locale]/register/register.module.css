@@ -1,14 +1,11 @@
-/* ─── Ted University — Login Page ──────────────────────────────────────────── */
-/* Consumes globals.css vars. Yellow overrides scoped to .pageWrap only.       */
+/* ─── Ted University — Register Page ───────────────────────────────────────── */
+/* Mirrors login.module.css — same yellow theme scoped to .pageWrap            */
 
-/* ── Ted brand colour overrides (scoped — won't leak to other pages) ─────────*/
 .pageWrap {
   --accent: #f5c800;
   --accent-glow: rgba(245, 200, 0, 0.18);
   --accent-hover: #d4ac00;
   --border-focus: #f5c800;
-
-  /* extra tokens used only on this page */
   --yellow-dim: rgba(245, 200, 0, 0.1);
   --yellow-border: rgba(245, 200, 0, 0.18);
   --panel-left: #131313;
@@ -53,18 +50,7 @@
   }
 }
 
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* ── Page Layout ─────────────────────────────────────────────────────────────── */
+/* ── Layout ──────────────────────────────────────────────────────────────────── */
 
 .pageWrap {
   min-height: 100vh;
@@ -81,8 +67,8 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  align-items: center;
-  text-align: center;
+  align-items: center; /* ← centre everything horizontally */
+  text-align: center; /* ← centre text */
   padding: 52px 48px;
   position: relative;
   background: var(--panel-left);
@@ -201,41 +187,64 @@
   text-align: center;
 }
 
-/* Features */
-.features {
+/* Steps */
+.steps {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 0;
   animation: fadeUp 0.75s ease 0.15s both;
   width: 100%;
   max-width: 280px;
-  text-align: left;
+  text-align: left; /* steps stay left-aligned internally */
 }
 
-.feature {
+.step {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
+  gap: 14px;
+  position: relative;
+  padding-bottom: 20px;
 }
 
-.featureAccent {
-  width: 3px;
-  min-height: 34px;
-  background: var(--accent);
-  border-radius: 2px;
+.step:last-child {
+  padding-bottom: 0;
+}
+
+.step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  top: 32px;
+  width: 1px;
+  height: calc(100% - 12px);
+  background: linear-gradient(to bottom, var(--accent), transparent);
+  opacity: 0.25;
+}
+
+.stepNum {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--yellow-dim);
+  border: 1px solid var(--yellow-border);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
-  margin-top: 2px;
-  opacity: 0.75;
 }
 
-.featureText h4 {
+.stepText h4 {
   font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
   margin-bottom: 2px;
+  padding-top: 5px;
 }
 
-.featureText p {
+.stepText p {
   font-size: 12px;
   color: var(--text-muted);
   line-height: 1.5;
@@ -266,13 +275,14 @@
   padding: 60px 48px;
   position: relative;
   background: var(--panel-right);
+  overflow-y: auto;
 }
 
 /* ── Card ────────────────────────────────────────────────────────────────────── */
 
 .card {
   width: 100%;
-  max-width: 400px;
+  max-width: 440px;
   animation: fadeUp 0.6s ease 0.1s both;
 }
 
@@ -349,8 +359,14 @@
 
 /* ── Form ────────────────────────────────────────────────────────────────────── */
 
+.nameRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
 .formGroup {
-  margin-bottom: 18px;
+  margin-bottom: 16px;
 }
 
 .formLabel {
@@ -402,7 +418,7 @@
 
 .input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-glow);
+  box-shadow: 0 0 0 3px var(--yellow-dim);
 }
 
 .inputError {
@@ -440,43 +456,64 @@
   gap: 4px;
 }
 
-/* ── Form Row ────────────────────────────────────────────────────────────────── */
+/* ── Password strength ───────────────────────────────────────────────────────── */
 
-.formRow {
+.strengthWrap {
+  margin-top: 8px;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-  margin-top: 2px;
+  flex-direction: column;
+  gap: 5px;
 }
 
-.checkboxLabel {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 13px;
-  color: var(--text-secondary);
-  user-select: none;
+.strengthTrack {
+  height: 3px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
 }
 
-.checkboxLabel input[type="checkbox"] {
-  display: none;
+.strengthFill {
+  height: 100%;
+  border-radius: 2px;
+  transition:
+    width 0.3s ease,
+    background 0.3s ease;
+}
+
+.strengthLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ── Terms ───────────────────────────────────────────────────────────────────── */
+
+.termsRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 20px;
+  margin-top: 4px;
 }
 
 .checkboxBox {
   width: 16px;
   height: 16px;
+  min-width: 16px;
   border: 1.5px solid var(--border);
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
+  cursor: pointer;
   transition: var(--transition);
-  flex-shrink: 0;
+  margin-top: 2px;
 }
 
-.checkboxLabel input[type="checkbox"]:checked ~ .checkboxBox {
+.checkboxBox:hover {
+  border-color: var(--accent);
+}
+
+.checkboxBoxChecked {
   background: var(--accent);
   border-color: var(--accent);
 }
@@ -484,30 +521,29 @@
 .checkboxCheck {
   width: 8px;
   height: 5px;
-  opacity: 0;
   border-left: 2px solid #111;
   border-bottom: 2px solid #111;
   transform: rotate(-45deg) translateY(-1px);
-  transition: opacity 0.15s;
 }
 
-.checkboxLabel input[type="checkbox"]:checked ~ .checkboxBox .checkboxCheck {
-  opacity: 1;
-}
-
-.forgotLink {
+.termsText {
   font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.termsLink {
   color: var(--accent);
   text-decoration: none;
   font-weight: 500;
   transition: opacity 0.2s;
 }
 
-.forgotLink:hover {
+.termsLink:hover {
   opacity: 0.7;
 }
 
-/* ── Submit Button ───────────────────────────────────────────────────────────── */
+/* ── Submit ──────────────────────────────────────────────────────────────────── */
 
 .submitBtn {
   width: 100%;
@@ -530,6 +566,7 @@
     background 0.2s,
     transform 0.1s,
     opacity 0.2s;
+  margin-top: 4px;
 }
 
 .submitBtn:hover:not(:disabled) {
@@ -570,7 +607,7 @@
   color: var(--text-muted);
 }
 
-.registerLink {
+.loginLink {
   color: var(--accent);
   text-decoration: none;
   font-weight: 600;
@@ -578,11 +615,29 @@
   transition: opacity 0.2s;
 }
 
-.registerLink:hover {
+.loginLink:hover {
   opacity: 0.7;
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────────── */
+
+@media (max-width: 1024px) {
+  .pageWrap {
+    grid-template-columns: 0.85fr 1fr;
+  }
+
+  .heroTitle {
+    font-size: 28px;
+  }
+
+  .panelLeft {
+    padding: 40px 32px;
+  }
+
+  .panelRight {
+    padding: 60px 32px 48px;
+  }
+}
 
 @media (max-width: 900px) {
   .pageWrap {
@@ -598,18 +653,16 @@
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 560px) {
+  .nameRow {
+    grid-template-columns: 1fr;
+  }
+
   .panelRight {
     padding: 72px 16px 40px;
   }
 
   .cardTitle {
     font-size: 26px;
-  }
-
-  .formRow {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 12px;
   }
 }

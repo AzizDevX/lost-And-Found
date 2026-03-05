@@ -1,151 +1,187 @@
 /**
- * Authentication Service — Stub implementation
- *
- * To connect your real API:
- *   1. Set NEXT_PUBLIC_API_URL in .env.local
- *   2. Uncomment "OPTION A" blocks in each function
- *   3. Adjust request/response shapes to match your API contract
- *   4. Remove the mock delays and demo data
+ * Authentication Service
+ * ─ Access token: module-level memory ref (never localStorage)
+ * ─ Refresh token: httpOnly cookie managed by the server
+ * ─ On app boot call initAuth() to silently restore session via /api/auth/refresh
  */
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api";
+import axios, { AxiosError } from "axios";
 
-// ─── Shared types ──────────────────────────────────────────────────────────────
+// ─── Axios instance ───────────────────────────────────────────────────────────
+export const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL, // http://localhost:5000
+  withCredentials: true, // send httpOnly refresh cookie automatically
+});
 
-export interface AuthUser {
-  id: string;
-  email: string;
-  name: string;
-  role: "student" | "staff" | "admin";
-  token: string;
-}
+// ─── Access token store — memory only ────────────────────────────────────────
+let _accessToken: string | null = null;
+
+export const getAccessToken = (): string | null => _accessToken;
+export const setAccessToken = (t: string) => {
+  _accessToken = t;
+};
+export const clearAccessToken = () => {
+  _accessToken = null;
+};
+export const isAuthenticated = (): boolean => !!_accessToken;
+
+// ─── Attach Bearer token to every outgoing request ───────────────────────────
+api.interceptors.request.use((config) => {
+  if (_accessToken) config.headers.Authorization = `Bearer ${_accessToken}`;
+  return config;
+});
+
+// ─── Auto-refresh on 401 (silent token rotation) ─────────────────────────────
+let _refreshing: Promise<string | null> | null = null;
+
+api.interceptors.response.use(
+  (res) => res,
+  async (error: AxiosError) => {
+    const original = error.config as typeof error.config & { _retry?: boolean };
+    if (error.response?.status === 401 && !original._retry) {
+      original._retry = true;
+      const token = await refreshSession();
+      if (token) {
+        original.headers = original.headers ?? {};
+        original.headers.Authorization = `Bearer ${token}`;
+        return api(original);
+      }
+    }
+    return Promise.reject(error);
+  },
+);
+
+// ─── Shared types ─────────────────────────────────────────────────────────────
 
 export interface AuthError {
-  code: "INVALID_CREDENTIALS" | "EMAIL_TAKEN" | "EMAIL_NOT_FOUND" | "SERVER_ERROR" | "NETWORK_ERROR";
+  code: string;
   message: string;
 }
 
-// ─── Login ─────────────────────────────────────────────────────────────────────
+type ServerError = { success: false; error: string; message: string };
 
-export interface LoginCredentials {
-  email: string;
-  password: string;
-  rememberMe?: boolean;
-}
-
-export type LoginResult =
-  | { success: true; user: AuthUser }
-  | { success: false; error: AuthError };
-
-export async function loginUser(credentials: LoginCredentials): Promise<LoginResult> {
-  // ── OPTION A: Real API ────────────────────────────────────────────────────────
-  // try {
-  //   const res = await fetch(`${BASE_URL}/auth/login`, {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify({ email: credentials.email, password: credentials.password }),
-  //   });
-  //   if (!res.ok) {
-  //     const err = await res.json();
-  //     if (res.status === 401)
-  //       return { success: false, error: { code: "INVALID_CREDENTIALS", message: err.message } };
-  //     return { success: false, error: { code: "SERVER_ERROR", message: err.message } };
-  //   }
-  //   return { success: true, user: await res.json() };
-  // } catch {
-  //   return { success: false, error: { code: "NETWORK_ERROR", message: "Network error" } };
-  // }
-
-  // ── OPTION B: Mock stub ───────────────────────────────────────────────────────
-  await new Promise((r) => setTimeout(r, 1200));
-  if (credentials.email === "demo@university.edu" && credentials.password === "password123") {
-    return { success: true, user: { id: "usr_001", email: credentials.email, name: "Demo Student", role: "student", token: "mock_jwt_token_xyz" } };
-  }
-  return { success: false, error: { code: "INVALID_CREDENTIALS", message: "Invalid email or password." } };
-}
-
-// ─── Register ──────────────────────────────────────────────────────────────────
-
-export interface RegisterCredentials {
-  firstName: string;
-  lastName: string;
-  studentId: string;
-  role: "student" | "staff" | "admin";
-  email: string;
-  password: string;
-}
-
-export type RegisterResult =
-  | { success: true; user: AuthUser }
-  | { success: false; error: AuthError };
-
-export async function registerUser(credentials: RegisterCredentials): Promise<RegisterResult> {
-  // ── OPTION A: Real API ────────────────────────────────────────────────────────
-  // try {
-  //   const res = await fetch(`${BASE_URL}/auth/register`, {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify(credentials),
-  //   });
-  //   if (!res.ok) {
-  //     const err = await res.json();
-  //     if (res.status === 409)
-  //       return { success: false, error: { code: "EMAIL_TAKEN", message: err.message } };
-  //     return { success: false, error: { code: "SERVER_ERROR", message: err.message } };
-  //   }
-  //   return { success: true, user: await res.json() };
-  // } catch {
-  //   return { success: false, error: { code: "NETWORK_ERROR", message: "Network error" } };
-  // }
-
-  // ── OPTION B: Mock stub ───────────────────────────────────────────────────────
-  await new Promise((r) => setTimeout(r, 1500));
-  if (credentials.email === "taken@university.edu") {
-    return { success: false, error: { code: "EMAIL_TAKEN", message: "Email already registered." } };
-  }
+function parseError(err: unknown, fallbackCode = "SERVER_ERROR"): AuthError {
+  const e = err as AxiosError<ServerError>;
+  if (!e.response)
+    return { code: "NETWORK_ERROR", message: "Cannot reach server." };
   return {
-    success: true,
-    user: {
-      id: "usr_new",
-      email: credentials.email,
-      name: `${credentials.firstName} ${credentials.lastName}`,
-      role: credentials.role,
-      token: "mock_jwt_new_user",
-    },
+    code: e.response.data?.error ?? fallbackCode,
+    message: e.response.data?.message ?? "Something went wrong.",
   };
 }
 
-// ─── Forgot Password ───────────────────────────────────────────────────────────
+// ─── refreshSession ───────────────────────────────────────────────────────────
+// POST /api/auth/refresh
+// Server reads httpOnly refreshToken cookie → verifies session → rotates tokens
+// Returns new accessToken or null if session is invalid/expired
 
-export interface ForgotPasswordPayload { email: string }
+export async function refreshSession(): Promise<string | null> {
+  if (_refreshing) return _refreshing; // deduplicate concurrent calls
+
+  _refreshing = (async () => {
+    try {
+      const { data } = await axios.post<{ success: true; accessToken: string }>(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/refresh`,
+        {},
+        { withCredentials: true },
+      );
+      _accessToken = data.accessToken;
+      return data.accessToken;
+    } catch {
+      // Any 401 (REFRESH_TOKEN_MISSING / INVALID_REFRESH_TOKEN / SESSION_NOT_FOUND
+      // / SESSION_EXPIRED / REFRESH_TOKEN_MISMATCH / USER_NOT_FOUND) → clear token
+      _accessToken = null;
+      return null;
+    } finally {
+      _refreshing = null;
+    }
+  })();
+
+  return _refreshing;
+}
+
+// ─── initAuth ─────────────────────────────────────────────────────────────────
+// Call once on app boot to silently restore session from the httpOnly cookie.
+// Returns true if authenticated, false if the user needs to log in.
+
+export async function initAuth(): Promise<boolean> {
+  if (_accessToken) return true;
+  const token = await refreshSession();
+  return !!token;
+}
+
+// ─── Login ────────────────────────────────────────────────────────────────────
+// POST /api/auth/login  →  { success, accessToken }
+// Server sets refreshToken httpOnly cookie automatically
+
+export type LoginResult =
+  | { success: true; accessToken: string }
+  | { success: false; error: AuthError };
+
+export async function loginUser(payload: {
+  email: string;
+  password: string;
+}): Promise<LoginResult> {
+  try {
+    const { data } = await api.post<{ success: true; accessToken: string }>(
+      "/api/auth/login",
+      payload,
+    );
+    _accessToken = data.accessToken;
+    return { success: true, accessToken: data.accessToken };
+  } catch (err) {
+    return { success: false, error: parseError(err) };
+  }
+}
+
+// ─── Register ─────────────────────────────────────────────────────────────────
+// POST /api/auth/register  →  { success: true, message }
+
+export type RegisterResult =
+  | { success: true }
+  | { success: false; error: AuthError };
+
+export async function registerUser(payload: {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+}): Promise<RegisterResult> {
+  try {
+    await api.post("/api/auth/register", payload);
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: parseError(err) };
+  }
+}
+
+// ─── Forgot password ──────────────────────────────────────────────────────────
 
 export type ForgotPasswordResult =
   | { success: true }
   | { success: false; error: AuthError };
 
-export async function requestPasswordReset(payload: ForgotPasswordPayload): Promise<ForgotPasswordResult> {
-  // ── OPTION A: Real API ────────────────────────────────────────────────────────
-  // try {
-  //   const res = await fetch(`${BASE_URL}/auth/forgot-password`, {
-  //     method: "POST",
-  //     headers: { "Content-Type": "application/json" },
-  //     body: JSON.stringify(payload),
-  //   });
-  //   if (!res.ok) {
-  //     const err = await res.json();
-  //     if (res.status === 404)
-  //       return { success: false, error: { code: "EMAIL_NOT_FOUND", message: err.message } };
-  //     return { success: false, error: { code: "SERVER_ERROR", message: err.message } };
-  //   }
-  //   return { success: true };
-  // } catch {
-  //   return { success: false, error: { code: "NETWORK_ERROR", message: "Network error" } };
-  // }
-
-  // ── OPTION B: Mock stub ───────────────────────────────────────────────────────
-  await new Promise((r) => setTimeout(r, 1200));
-  if (payload.email === "notfound@university.edu") {
-    return { success: false, error: { code: "EMAIL_NOT_FOUND", message: "Email not found." } };
+export async function requestPasswordReset(
+  email: string,
+): Promise<ForgotPasswordResult> {
+  try {
+    await api.post("/api/auth/forgot-password", { email });
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: parseError(err) };
   }
-  return { success: true };
+}
+
+// ─── Sign out ─────────────────────────────────────────────────────────────────
+// Clears memory token + calls /api/auth/logout so server invalidates the session
+// and clears the httpOnly cookie.
+
+export async function signOut(): Promise<void> {
+  try {
+    await api.post("/api/auth/logout");
+  } catch {
+    // ignore server errors — clear client state regardless
+  } finally {
+    _accessToken = null;
+  }
 }

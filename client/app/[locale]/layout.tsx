@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { routing, localeDir, type Locale } from "@/i18n/routing";
 import "./globals.css";
+import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
   title: "University Lost & Found",
@@ -38,7 +39,10 @@ export default async function LocaleLayout({
       </head>
       <body>
         {/* next-intl v4: messages are auto-injected, no prop needed */}
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          <Navbar />
+          {children}
+        </NextIntlClientProvider>
       </body>
     </html>
   );

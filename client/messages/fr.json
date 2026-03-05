@@ -1,9 +1,12 @@
 {
   "login": {
     "title": "Bon Retour",
-    "subtitle": "Connectez-vous au portail Objets Trouvés",
-    "university": "Objets Trouvés - Ted-Université",
-    "email": { "label": "Adresse Email", "placeholder": "vous@universite.edu" },
+    "subtitle": "Connectez-vous au portail Lost & Found",
+    "university": "Lost & Found- Ted-Université",
+    "email": {
+      "label": "Adresse Email",
+      "placeholder": "votreprenom@ted-university.com"
+    },
     "password": {
       "label": "Mot de passe",
       "placeholder": "Entrez votre mot de passe"
@@ -16,7 +19,7 @@
     "register": "S'inscrire ici",
     "errors": {
       "emailRequired": "L'email est requis",
-      "emailInvalid": "Veuillez entrer un email universitaire valide",
+      "emailInvalid": "Veuillez entrer un email Ted-Université valide",
       "passwordRequired": "Le mot de passe est requis",
       "passwordLength": "Le mot de passe doit comporter au moins 6 caractères",
       "invalidCredentials": "Email ou mot de passe invalide. Veuillez réessayer.",
@@ -26,23 +29,13 @@
   },
   "register": {
     "title": "Créer un compte",
-    "subtitle": "Rejoignez la communauté Objets Trouvés",
-    "university": "Objets Trouvés - Ted-Université",
-    "firstName": { "label": "Prénom", "placeholder": "Jean" },
-    "lastName": { "label": "Nom de famille", "placeholder": "Dupont" },
-    "studentId": {
-      "label": "N° Étudiant / Personnel",
-      "placeholder": "ex. E12345678"
-    },
-    "role": {
-      "label": "Je suis",
-      "student": "Étudiant",
-      "staff": "Personnel",
-      "admin": "Admin"
-    },
+    "subtitle": "Rejoignez la communauté Lost & Found",
+    "university": "Lost & Found - Ted-Université",
+    "firstName": { "label": "Prénom", "placeholder": "Prénom" },
+    "lastName": { "label": "Nom de famille", "placeholder": "Nom de famille" },
     "email": {
       "label": "Email universitaire",
-      "placeholder": "vous@universite.edu"
+      "placeholder": "votreprenom@ted-university.com"
     },
     "password": {
       "label": "Mot de passe",
@@ -68,9 +61,8 @@
     "errors": {
       "firstNameRequired": "Le prénom est requis",
       "lastNameRequired": "Le nom de famille est requis",
-      "studentIdRequired": "Le numéro étudiant/personnel est requis",
       "emailRequired": "L'email est requis",
-      "emailInvalid": "Veuillez entrer un email universitaire valide",
+      "emailInvalid": "Vous devez utiliser votre email étudiant Ted-Université (@ted-university.com)",
       "passwordRequired": "Le mot de passe est requis",
       "passwordLength": "Le mot de passe doit comporter au moins 8 caractères",
       "confirmPasswordRequired": "Veuillez confirmer votre mot de passe",
@@ -84,10 +76,10 @@
   "forgotPassword": {
     "title": "Mot de passe oublié?",
     "subtitle": "Nous enverrons un lien de réinitialisation à votre email universitaire",
-    "university": "Objets Trouvés - Ted-Université",
+    "university": "Lost & Found - Ted-Université",
     "email": {
       "label": "Email universitaire",
-      "placeholder": "vous@universite.edu"
+      "placeholder": "votreprenom@ted-university.com"
     },
     "submit": "Envoyer le lien",
     "submitting": "Envoi en cours...",
@@ -100,10 +92,48 @@
     "resendCooldown": "Renvoyer dans {seconds}s",
     "errors": {
       "emailRequired": "L'email est requis",
-      "emailInvalid": "Veuillez entrer un email universitaire valide",
+      "emailInvalid": "Veuillez entrer un email Ted-Université valide",
       "emailNotFound": "Aucun compte trouvé avec cet email",
       "serverError": "Une erreur s'est produite. Veuillez réessayer plus tard."
     }
+  },
+  "home": {
+    "eyebrow": "Objets Trouvés de l'Université",
+    "title": "Bienvenue sur",
+    "titleHighlight": "Lost & Found",
+    "description": "La plateforme officielle d'objets trouvés de Ted-Université. Signalez vos objets perdus, consultez les objets trouvés et récupérez ce qui vous appartient — tout en un seul endroit.",
+    "stats": {
+      "itemsReported": "Objets Signalés",
+      "itemsReturned": "Objets Rendus",
+      "announcements": "Annonces Actives",
+      "soon": "Bientôt..."
+    },
+    "howItWorks": {
+      "eyebrow": "Comment ça marche",
+      "title": "Trois étapes simples",
+      "subtitle": "Réunir les étudiants et le personnel avec leurs affaires aussi rapidement que possible.",
+      "steps": {
+        "browse": {
+          "title": "Consulter les Annonces",
+          "description": "Consultez les dernières publications pour voir si votre objet a déjà été déposé ou signalé par quelqu'un sur le campus."
+        },
+        "report": {
+          "title": "Signaler votre Objet",
+          "description": "Vous avez perdu quelque chose ou trouvé un objet ? Connectez-vous et soumettez un signalement avec une description, un lieu et une photo."
+        },
+        "connect": {
+          "title": "Entrer en Contact",
+          "description": "Nous associons les signalements et notifions les deux parties afin que l'objet puisse être réclamé et récupéré en toute sécurité."
+        }
+      }
+    },
+    "banner": {
+      "eyebrow": "Dernières Mises à Jour",
+      "title": "Voir les Annonces",
+      "description": "Restez informé des derniers signalements d'objets perdus et trouvés sur le campus de Ted-Université.",
+      "cta": "Voir les Annonces"
+    },
+    "footer": "Ted-Université — ISP — Université par Clevory"
   },
   "common": { "loading": "Chargement...", "language": "Langue" }
 }

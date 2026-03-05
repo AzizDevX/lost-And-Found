@@ -5,11 +5,9 @@ import { useTranslations, useLocale } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import axios, { AxiosError } from "axios";
-import { type Locale } from "@/i18n";
+import { type Locale } from "@/i18n/routing";
 import { EyeIcon, MailIcon, LockIcon, SearchIcon } from "@/components/Icons";
-import LanguageSwitcher from "@/components/LanguageSwitcher";
 import styles from "./login.module.css";
-
 // ─── Access-token store ───────────────────────────────────────────────────────
 // Kept in a module-level ref so auth interceptors can read it without touching
 // localStorage. In a real app, lift this into a React context / Zustand store.
@@ -153,7 +151,9 @@ export default function LoginPage() {
 
         // Refresh token is automatically stored in the httpOnly cookie by the server
         setSuccessMsg(t("success"));
-        setTimeout(() => router.push(`/${locale}/dashboard`), 1400);
+        setTimeout(() => {
+          window.location.href = `/${locale}/home`;
+        }, 1400);
       } catch (err) {
         const axiosErr = err as AxiosError<LoginFailure>;
 
@@ -192,21 +192,6 @@ export default function LoginPage() {
       {/* ── Left branding panel ───────────────────────────────────────────── */}
       <div className={styles.panelLeft}>
         <div className={styles.leftBg} />
-
-        {/* Logo */}
-        <div className={styles.logoWrap}>
-          {/* If using next/image, replace this with <Image> */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/logo.jpg"
-            alt="Ted University"
-            className={styles.logoImg}
-          />
-          <div className={styles.logoText}>
-            <span className={styles.logoTitle}>Ted University</span>
-            <span className={styles.logoSubtitle}>Lost &amp; Found Portal</span>
-          </div>
-        </div>
 
         {/* Hero */}
         <div className={styles.heroSection}>
@@ -256,9 +241,6 @@ export default function LoginPage() {
 
       {/* ── Right form panel ──────────────────────────────────────────────── */}
       <div className={styles.panelRight}>
-        {/* Language switcher — reuses your shared component */}
-        <LanguageSwitcher locale={locale} page="login" />
-
         <div className={styles.card}>
           {/* Header */}
           <div className={styles.cardHeader}>
@@ -373,10 +355,7 @@ export default function LoginPage() {
                 {t("rememberMe")}
               </label>
 
-              <Link
-                href={`/${locale}/forgot-password`}
-                className={styles.forgotLink}
-              >
+              <Link href={`/${locale}/login`} className={styles.forgotLink}>
                 {t("forgotPassword")}
               </Link>
             </div>
