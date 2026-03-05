@@ -74,10 +74,10 @@ export async function Login(req, res) {
     const user = await userModel.findOne({ email }).select("+password");
 
     if (!user) {
-      return res.status(400).json({
+      return res.status(404).json({
         success: false,
         error: "INVALID_CREDENTIALS",
-        message: "Email or password is incorrect.",
+        message: "You Need To Register First",
       });
     }
 

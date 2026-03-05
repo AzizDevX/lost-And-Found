@@ -1,0 +1,109 @@
+{
+  "login": {
+    "title": "Bon Retour",
+    "subtitle": "Connectez-vous au portail Objets Trouvés",
+    "university": "Objets Trouvés - Ted-Université",
+    "email": { "label": "Adresse Email", "placeholder": "vous@universite.edu" },
+    "password": {
+      "label": "Mot de passe",
+      "placeholder": "Entrez votre mot de passe"
+    },
+    "rememberMe": "Se souvenir de moi",
+    "forgotPassword": "Mot de passe oublié?",
+    "submit": "Se connecter",
+    "submitting": "Connexion en cours...",
+    "noAccount": "Pas encore de compte?",
+    "register": "S'inscrire ici",
+    "errors": {
+      "emailRequired": "L'email est requis",
+      "emailInvalid": "Veuillez entrer un email universitaire valide",
+      "passwordRequired": "Le mot de passe est requis",
+      "passwordLength": "Le mot de passe doit comporter au moins 6 caractères",
+      "invalidCredentials": "Email ou mot de passe invalide. Veuillez réessayer.",
+      "serverError": "Une erreur s'est produite. Veuillez réessayer plus tard."
+    },
+    "success": "Connexion réussie! Redirection en cours..."
+  },
+  "register": {
+    "title": "Créer un compte",
+    "subtitle": "Rejoignez la communauté Objets Trouvés",
+    "university": "Objets Trouvés - Ted-Université",
+    "firstName": { "label": "Prénom", "placeholder": "Jean" },
+    "lastName": { "label": "Nom de famille", "placeholder": "Dupont" },
+    "studentId": {
+      "label": "N° Étudiant / Personnel",
+      "placeholder": "ex. E12345678"
+    },
+    "role": {
+      "label": "Je suis",
+      "student": "Étudiant",
+      "staff": "Personnel",
+      "admin": "Admin"
+    },
+    "email": {
+      "label": "Email universitaire",
+      "placeholder": "vous@universite.edu"
+    },
+    "password": {
+      "label": "Mot de passe",
+      "placeholder": "Créez un mot de passe fort"
+    },
+    "confirmPassword": {
+      "label": "Confirmer le mot de passe",
+      "placeholder": "Répétez votre mot de passe"
+    },
+    "terms": "J'accepte les",
+    "termsLink": "Conditions d'utilisation",
+    "submit": "Créer un compte",
+    "submitting": "Création du compte...",
+    "haveAccount": "Vous avez déjà un compte?",
+    "login": "Se connecter",
+    "passwordStrength": {
+      "label": "Force du mot de passe",
+      "weak": "Faible",
+      "fair": "Moyen",
+      "good": "Bon",
+      "strong": "Fort"
+    },
+    "errors": {
+      "firstNameRequired": "Le prénom est requis",
+      "lastNameRequired": "Le nom de famille est requis",
+      "studentIdRequired": "Le numéro étudiant/personnel est requis",
+      "emailRequired": "L'email est requis",
+      "emailInvalid": "Veuillez entrer un email universitaire valide",
+      "passwordRequired": "Le mot de passe est requis",
+      "passwordLength": "Le mot de passe doit comporter au moins 8 caractères",
+      "confirmPasswordRequired": "Veuillez confirmer votre mot de passe",
+      "passwordMismatch": "Les mots de passe ne correspondent pas",
+      "termsRequired": "Vous devez accepter les conditions",
+      "emailTaken": "Cet email est déjà enregistré",
+      "serverError": "Une erreur s'est produite. Veuillez réessayer plus tard."
+    },
+    "success": "Compte créé! Redirection vers la connexion..."
+  },
+  "forgotPassword": {
+    "title": "Mot de passe oublié?",
+    "subtitle": "Nous enverrons un lien de réinitialisation à votre email universitaire",
+    "university": "Objets Trouvés - Ted-Université",
+    "email": {
+      "label": "Email universitaire",
+      "placeholder": "vous@universite.edu"
+    },
+    "submit": "Envoyer le lien",
+    "submitting": "Envoi en cours...",
+    "backToLogin": "Retour à la connexion",
+    "rememberPassword": "Vous vous souvenez de votre mot de passe?",
+    "successTitle": "Vérifiez votre boîte de réception",
+    "successMessage": "Un lien de réinitialisation a été envoyé à {email}. Vérifiez vos spams si vous ne le voyez pas.",
+    "resend": "Renvoyer l'email",
+    "resending": "Renvoi en cours...",
+    "resendCooldown": "Renvoyer dans {seconds}s",
+    "errors": {
+      "emailRequired": "L'email est requis",
+      "emailInvalid": "Veuillez entrer un email universitaire valide",
+      "emailNotFound": "Aucun compte trouvé avec cet email",
+      "serverError": "Une erreur s'est produite. Veuillez réessayer plus tard."
+    }
+  },
+  "common": { "loading": "Chargement...", "language": "Langue" }
+}

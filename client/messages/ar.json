@@ -1,0 +1,80 @@
+{
+  "login": {
+    "title": "مرحباً بعودتك",
+    "subtitle": "سجّل الدخول إلى بوابة المفقودات",
+    "university": "بوابة المفقودات - الجامعة",
+    "email": { "label": "البريد الإلكتروني", "placeholder": "you@university.edu" },
+    "password": { "label": "كلمة المرور", "placeholder": "أدخل كلمة المرور" },
+    "rememberMe": "تذكّرني",
+    "forgotPassword": "نسيت كلمة المرور؟",
+    "submit": "تسجيل الدخول",
+    "submitting": "جاري تسجيل الدخول...",
+    "noAccount": "ليس لديك حساب؟",
+    "register": "سجّل هنا",
+    "errors": {
+      "emailRequired": "البريد الإلكتروني مطلوب",
+      "emailInvalid": "يرجى إدخال بريد إلكتروني جامعي صحيح",
+      "passwordRequired": "كلمة المرور مطلوبة",
+      "passwordLength": "يجب أن تتكوّن كلمة المرور من 6 أحرف على الأقل",
+      "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة. حاول مجدداً.",
+      "serverError": "حدث خطأ ما. يرجى المحاولة لاحقاً."
+    },
+    "success": "تم تسجيل الدخول بنجاح! جاري التحويل..."
+  },
+  "register": {
+    "title": "إنشاء حساب",
+    "subtitle": "انضم إلى مجتمع المفقودات",
+    "university": "بوابة المفقودات - الجامعة",
+    "firstName": { "label": "الاسم الأول", "placeholder": "محمد" },
+    "lastName": { "label": "اسم العائلة", "placeholder": "العلي" },
+    "studentId": { "label": "رقم الطالب / الموظف", "placeholder": "مثال: S12345678" },
+    "role": { "label": "أنا", "student": "طالب", "staff": "موظف", "admin": "مسؤول" },
+    "email": { "label": "البريد الجامعي", "placeholder": "you@university.edu" },
+    "password": { "label": "كلمة المرور", "placeholder": "أنشئ كلمة مرور قوية" },
+    "confirmPassword": { "label": "تأكيد كلمة المرور", "placeholder": "أعد إدخال كلمة المرور" },
+    "terms": "أوافق على",
+    "termsLink": "الشروط والأحكام",
+    "submit": "إنشاء الحساب",
+    "submitting": "جاري إنشاء الحساب...",
+    "haveAccount": "لديك حساب بالفعل؟",
+    "login": "تسجيل الدخول",
+    "passwordStrength": { "label": "قوة كلمة المرور", "weak": "ضعيفة", "fair": "متوسطة", "good": "جيدة", "strong": "قوية" },
+    "errors": {
+      "firstNameRequired": "الاسم الأول مطلوب",
+      "lastNameRequired": "اسم العائلة مطلوب",
+      "studentIdRequired": "رقم الطالب/الموظف مطلوب",
+      "emailRequired": "البريد الإلكتروني مطلوب",
+      "emailInvalid": "يرجى إدخال بريد إلكتروني جامعي صحيح",
+      "passwordRequired": "كلمة المرور مطلوبة",
+      "passwordLength": "يجب أن تتكوّن كلمة المرور من 8 أحرف على الأقل",
+      "confirmPasswordRequired": "يرجى تأكيد كلمة المرور",
+      "passwordMismatch": "كلمتا المرور غير متطابقتين",
+      "termsRequired": "يجب الموافقة على الشروط",
+      "emailTaken": "هذا البريد الإلكتروني مسجّل مسبقاً",
+      "serverError": "حدث خطأ ما. يرجى المحاولة لاحقاً."
+    },
+    "success": "تم إنشاء الحساب! جاري التحويل لتسجيل الدخول..."
+  },
+  "forgotPassword": {
+    "title": "نسيت كلمة المرور؟",
+    "subtitle": "سنرسل رابط إعادة التعيين إلى بريدك الجامعي",
+    "university": "بوابة المفقودات - الجامعة",
+    "email": { "label": "البريد الجامعي", "placeholder": "you@university.edu" },
+    "submit": "إرسال رابط الاسترداد",
+    "submitting": "جاري الإرسال...",
+    "backToLogin": "العودة لتسجيل الدخول",
+    "rememberPassword": "تذكّرت كلمة المرور؟",
+    "successTitle": "تحقق من بريدك الوارد",
+    "successMessage": "تم إرسال رابط إعادة تعيين كلمة المرور إلى {email}. تحقق من مجلد البريد العشوائي إن لم تجده.",
+    "resend": "إعادة إرسال البريد",
+    "resending": "جاري الإعادة...",
+    "resendCooldown": "إعادة الإرسال خلال {seconds}ث",
+    "errors": {
+      "emailRequired": "البريد الإلكتروني مطلوب",
+      "emailInvalid": "يرجى إدخال بريد إلكتروني جامعي صحيح",
+      "emailNotFound": "لا يوجد حساب مرتبط بهذا البريد الإلكتروني",
+      "serverError": "حدث خطأ ما. يرجى المحاولة لاحقاً."
+    }
+  },
+  "common": { "loading": "جاري التحميل...", "language": "اللغة" }
+}
