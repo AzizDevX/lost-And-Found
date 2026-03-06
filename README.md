@@ -14,15 +14,15 @@ _The official platform to report, find, and reclaim lost belongings on campus._
 
 ### 🏠 Home
 
-![Home Page](homepage.jpeg)
+![Home Page](assets/homepage.jpeg)
 
 ### 🔐 Sign In
 
-![Login Page](loginpage.jpeg)
+![Login Page](assets/loginpage.jpeg)
 
 ### 📝 Create Account
 
-![Register Page](registerpage.jpeg)
+![Register Page](assets/registerpage.jpeg)
 
 ---
 
