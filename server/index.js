@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import authRoutes from "./routers/auth.router.js";
 import accountRoutes from "./routers/account.router.js";
+import path from "path";
 dotenv.config();
 connectDB();
 const app = express();
@@ -15,6 +16,8 @@ app.use(
     credentials: true,
   }),
 );
+
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use(express.json());
 app.use(cookieParser());
 app.use("/api/auth", authRoutes);

@@ -9,7 +9,7 @@ import path from "path";
 const Router = express.Router();
 const avatarUpload = createUploader(
   (req) => path.join("uploads", "users", req.user.id),
-  { maxSizeMB: 2, filename: "avatar" },
+  { maxSizeMB: 2 },
 );
 
 Router.get("/user", authMiddleware, getAccountData);
@@ -21,4 +21,5 @@ Router.put(
   validateEditAccountData,
   editAccountData,
 );
+
 export default Router;

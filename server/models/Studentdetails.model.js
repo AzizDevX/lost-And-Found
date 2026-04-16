@@ -20,16 +20,17 @@ const studentDetailsSchema = new mongoose.Schema(
 
     year: {
       type: String,
-      required: true,
-      enum: ["L1", "L2", "L3", "M1", "M2"],
+      default: null,
+      enum: ["L1", "L2", "L3", "M1", "M2", null],
     },
 
     specialty: {
       type: String,
-      required: true,
-      enum: ["glsi", "bd", "isr", "cloud", "cyber"],
+      default: null,
+      enum: ["glsi", "bd", "isr", "cloud", "cyber", null],
       validate: {
         validator: function (value) {
+          if (!value || !this.year) return true;
           return YEAR_SPECIALTIES[this.year]?.includes(value);
         },
         message: function (props) {

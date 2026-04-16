@@ -7,6 +7,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
       minlength: 2,
       maxlength: 500,
+      default: "uploads/users/default.png",
     },
 
     firstName: {

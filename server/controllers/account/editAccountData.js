@@ -1,4 +1,6 @@
 import bcrypt from "bcrypt";
+import fs from "fs";
+import path from "path";
 import userModel from "../../models/user.model.js";
 import StudentDetails from "../../models/Studentdetails.model.js";
 
@@ -27,7 +29,6 @@ export async function editAccountData(req, res) {
       });
     }
 
-    // Password change
     if (currentPassword !== undefined && newPassword !== undefined) {
       const isMatch = await bcrypt.compare(currentPassword, user.password);
 
@@ -63,14 +64,28 @@ export async function editAccountData(req, res) {
     await user.save();
 
     if (year !== undefined || specialty !== undefined) {
+      const normalizedYear = year === "" || year === null ? null : year;
+      const normalizedSpecialty =
+        specialty === "" || specialty === null ? null : specialty;
+
       let details = await StudentDetails.findOne({ user: userId });
 
       if (details) {
-        if (year !== undefined) details.year = year;
-        if (specialty !== undefined) details.specialty = specialty;
-        await details.save();
+        const updatedYear = year !== undefined ? normalizedYear : details.year;
+        const updatedSpecialty =
+          specialty !== undefined ? normalizedSpecialty : details.specialty;
+
+        await StudentDetails.findOneAndUpdate(
+          { user: userId },
+          { year: updatedYear, specialty: updatedSpecialty },
+          { returnDocument: "after", runValidators: true, context: "query" },
+        );
       } else {
-        await StudentDetails.create({ user: userId, year, specialty });
+        await StudentDetails.create({
+          user: userId,
+          year: normalizedYear ?? null,
+          specialty: normalizedSpecialty ?? null,
+        });
       }
     }
 
