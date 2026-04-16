@@ -137,3 +137,40 @@ export async function Login(req, res) {
     return res.status(500).json({ message: "Internal server error" });
   }
 }
+
+export async function Logout(req, res) {
+  try {
+    const refreshToken = req.cookies.refreshToken;
+
+    if (!refreshToken) {
+      return res.status(401).json({
+        success: false,
+        error: "NOT_LOGGED_IN",
+        message: "You are not logged in.",
+      });
+    }
+
+    try {
+      const decoded = jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET,
+      );
+      await UserSession.findOneAndDelete({ sessionId: decoded.sessionId });
+    } catch {}
+
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged out successfully.",
+    });
+  } catch (err) {
+    console.error(`Logout Error: ${err}`);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+}

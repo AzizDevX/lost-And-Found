@@ -25,8 +25,8 @@ const api = axios.create({
 function getStrength(pw: string): 0 | 1 | 2 | 3 | 4 {
   if (!pw) return 0;
   let score = 0;
-  if (pw.length >= 8) score++;
-  if (pw.length >= 12) score++;
+  if (pw.length >= 6) score++; // was 8
+  if (pw.length >= 10) score++; // was 12
   if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
   if (/[0-9]/.test(pw)) score++;
   if (/[^A-Za-z0-9]/.test(pw)) score++;
@@ -146,8 +146,17 @@ export default function RegisterPage() {
     const errs: FormErrors = {};
     const email = normaliseEmail(form.email);
 
-    if (!form.firstName.trim()) errs.firstName = t("errors.firstNameRequired");
-    if (!form.lastName.trim()) errs.lastName = t("errors.lastNameRequired");
+    if (!form.firstName.trim()) {
+      errs.firstName = t("errors.firstNameRequired");
+    } else if (form.firstName.trim().length < 2) {
+      errs.firstName = t("errors.firstNameMinLength");
+    }
+
+    if (!form.lastName.trim()) {
+      errs.lastName = t("errors.lastNameRequired");
+    } else if (form.lastName.trim().length < 2) {
+      errs.lastName = t("errors.lastNameMinLength");
+    }
 
     if (!email) {
       errs.email = t("errors.emailRequired");
@@ -159,7 +168,7 @@ export default function RegisterPage() {
 
     if (!form.password) {
       errs.password = t("errors.passwordRequired");
-    } else if (form.password.length < 8) {
+    } else if (form.password.length < 6) {
       errs.password = t("errors.passwordLength");
     }
 

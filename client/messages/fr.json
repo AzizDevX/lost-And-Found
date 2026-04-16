@@ -18,6 +18,8 @@
     "noAccount": "Pas encore de compte?",
     "register": "S'inscrire ici",
     "errors": {
+      "firstNameMinLength": "Le prénom doit contenir au moins 2 caractères.",
+      "lastNameMinLength": "Le nom doit contenir au moins 2 caractères.",
       "emailRequired": "L'email est requis",
       "emailInvalid": "Veuillez entrer un email Ted-Université valide",
       "passwordRequired": "Le mot de passe est requis",
@@ -59,12 +61,14 @@
       "strong": "Fort"
     },
     "errors": {
+      "firstNameMinLength": "Le prénom doit contenir au moins 2 caractères.",
+      "lastNameMinLength": "Le nom doit contenir au moins 2 caractères.",
       "firstNameRequired": "Le prénom est requis",
       "lastNameRequired": "Le nom de famille est requis",
       "emailRequired": "L'email est requis",
       "emailInvalid": "Vous devez utiliser votre email étudiant Ted-Université (@ted-university.com)",
       "passwordRequired": "Le mot de passe est requis",
-      "passwordLength": "Le mot de passe doit comporter au moins 8 caractères",
+      "passwordLength": "Le mot de passe doit comporter au moins 6 caractères",
       "confirmPasswordRequired": "Veuillez confirmer votre mot de passe",
       "passwordMismatch": "Les mots de passe ne correspondent pas",
       "termsRequired": "Vous devez accepter les conditions",
@@ -135,5 +139,79 @@
     },
     "footer": "Ted-Université — ISP — Université par Clevory"
   },
-  "common": { "loading": "Chargement...", "language": "Langue" }
+  "common": { "loading": "Chargement...", "language": "Langue" },
+  "account": {
+    "logout": "Se déconnecter",
+    "loggingOut": "Déconnexion...",
+    "eyebrow": "Ted-Université Lost & Found",
+    "title": "Mon Compte",
+    "subtitle": "Gérez votre profil et les paramètres de votre compte",
+    "loading": "Chargement de votre profil...",
+    "optional": "optionnel",
+    "submit": "Enregistrer",
+    "submitting": "Enregistrement...",
+    "success": "Votre profil a été mis à jour avec succès.",
+
+    "auth": {
+      "title": "Connexion Requise",
+      "description": "Vous devez être connecté pour accéder à votre page de compte.",
+      "cta": "Se Connecter"
+    },
+
+    "avatar": {
+      "change": "Changer la photo de profil",
+      "alt": "Photo de profil",
+      "hint": "Cliquez sur la photo pour en télécharger une nouvelle",
+      "namePlaceholder": "Votre Nom",
+      "emailPlaceholder": "votre email"
+    },
+
+    "sections": {
+      "personal": "Informations Personnelles",
+      "academic": "Détails Académiques",
+      "password": "Changer le Mot de Passe"
+    },
+
+    "fields": {
+      "firstName": {
+        "label": "Prénom",
+        "placeholder": "Votre prénom"
+      },
+      "lastName": {
+        "label": "Nom de Famille",
+        "placeholder": "Votre nom de famille"
+      },
+      "email": {
+        "label": "Email Universitaire",
+        "placeholder": "votreprenom@ted-university.com"
+      },
+      "year": {
+        "label": "Année",
+        "placeholder": "Sélectionnez votre année"
+      },
+      "specialty": {
+        "label": "Spécialité",
+        "placeholder": "Sélectionnez votre spécialité"
+      },
+      "currentPassword": {
+        "label": "Mot de Passe Actuel",
+        "placeholder": "Entrez le mot de passe actuel"
+      },
+      "newPassword": {
+        "label": "Nouveau Mot de Passe",
+        "placeholder": "Entrez le nouveau mot de passe"
+      }
+    },
+
+    "errors": {
+      "firstNameMinLength": "Le prénom doit contenir au moins 2 caractères.",
+      "lastNameMinLength": "Le nom doit contenir au moins 2 caractères.",
+      "firstNameRequired": "Le prénom est requis",
+      "lastNameRequired": "Le nom de famille est requis",
+      "emailRequired": "L'email est requis",
+      "emailInvalid": "Veuillez entrer un email Ted-Université valide (@ted-university.com)",
+      "passwordLength": "Le nouveau mot de passe doit comporter au moins 6 caractères",
+      "serverError": "Une erreur s'est produite. Veuillez réessayer plus tard."
+    }
+  }
 }

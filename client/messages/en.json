@@ -15,6 +15,8 @@
     "noAccount": "Don't have an account?",
     "register": "Register here",
     "errors": {
+      "firstNameMinLength": "First name must be at least 2 characters.",
+      "lastNameMinLength": "Last name must be at least 2 characters.",
       "emailRequired": "Email is required",
       "emailInvalid": "Please enter a valid Ted University email",
       "passwordRequired": "Password is required",
@@ -56,12 +58,14 @@
       "strong": "Strong"
     },
     "errors": {
+      "firstNameMinLength": "First name must be at least 2 characters.",
+      "lastNameMinLength": "Last name must be at least 2 characters.",
       "firstNameRequired": "First name is required",
       "lastNameRequired": "Last name is required",
       "emailRequired": "Email is required",
       "emailInvalid": "You need your Ted University student email to register (@ted-university.com)",
       "passwordRequired": "Password is required",
-      "passwordLength": "Password must be at least 8 characters",
+      "passwordLength": "Password must be at least 6 characters",
       "confirmPasswordRequired": "Please confirm your password",
       "passwordMismatch": "Passwords do not match",
       "termsRequired": "You must agree to the terms",
@@ -132,5 +136,79 @@
     },
     "footer": "Ted University — ISP — University by Clevory"
   },
-  "common": { "loading": "Loading...", "language": "Language" }
+  "common": { "loading": "Loading...", "language": "Language" },
+  "account": {
+    "logout": "Sign Out",
+    "loggingOut": "Signing out...",
+    "eyebrow": "Ted-University Lost & Found",
+    "title": "My Account",
+    "subtitle": "Manage your profile and account settings",
+    "loading": "Loading your profile...",
+    "optional": "optional",
+    "submit": "Save Changes",
+    "submitting": "Saving...",
+    "success": "Your profile has been updated successfully.",
+
+    "auth": {
+      "title": "Sign In Required",
+      "description": "You need to be signed in to access your account page.",
+      "cta": "Sign In"
+    },
+
+    "avatar": {
+      "change": "Change profile photo",
+      "alt": "Profile photo",
+      "hint": "Click photo to upload a new image",
+      "namePlaceholder": "Your Name",
+      "emailPlaceholder": "your email"
+    },
+
+    "sections": {
+      "personal": "Personal Information",
+      "academic": "Academic Details",
+      "password": "Change Password"
+    },
+
+    "fields": {
+      "firstName": {
+        "label": "First Name",
+        "placeholder": "Your first name"
+      },
+      "lastName": {
+        "label": "Last Name",
+        "placeholder": "Your last name"
+      },
+      "email": {
+        "label": "University Email",
+        "placeholder": "yourname@ted-university.com"
+      },
+      "year": {
+        "label": "Year",
+        "placeholder": "Select your year"
+      },
+      "specialty": {
+        "label": "Specialty",
+        "placeholder": "Select your specialty"
+      },
+      "currentPassword": {
+        "label": "Current Password",
+        "placeholder": "Enter current password"
+      },
+      "newPassword": {
+        "label": "New Password",
+        "placeholder": "Enter new password"
+      }
+    },
+
+    "errors": {
+      "firstNameMinLength": "First name must be at least 2 characters.",
+      "lastNameMinLength": "Last name must be at least 2 characters.",
+      "firstNameRequired": "First name is required",
+      "lastNameRequired": "Last name is required",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Please enter a valid Ted University email (@ted-university.com)",
+      "passwordLength": "New password must be at least 6 characters",
+      "serverError": "Something went wrong. Please try again later."
+    }
+  }
 }
