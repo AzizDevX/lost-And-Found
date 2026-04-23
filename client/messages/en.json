@@ -136,8 +136,53 @@
     },
     "footer": "Ted University — ISP — University by Clevory"
   },
-  "common": { "loading": "Loading...", "language": "Language" },
   "account": {
+    "ban": {
+      "titleTemporary": "You are banned until {date}",
+      "titleLifetime": "You are permanently banned",
+      "message": "Your account has been restricted. You cannot post announcements during this period."
+    },
+    "announcements": {
+      "title": "My Announcements",
+      "tabs": {
+        "pending": "Pending",
+        "active": "Active",
+        "history": "History"
+      },
+      "confirm": {
+        "cancelBtn": "Go back",
+        "okBtn": "Yes, confirm",
+        "cancel": {
+          "title": "Cancel announcement?",
+          "description": "This will remove your announcement. This action cannot be undone."
+        },
+        "confirm": {
+          "title": "Mark as resolved?",
+          "description": "This will mark your item as found and remove it from the public feed."
+        },
+        "close": {
+          "title": "Close without a match?",
+          "description": "This will cancel your announcement without confirming a match."
+        }
+      },
+      "statuses": {
+        "pending": "Pending",
+        "accepted": "Active",
+        "rejected": "Rejected",
+        "cancelled": "Cancelled",
+        "confirmed": "Resolved"
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "confirmFound": "I found the person",
+        "closeNotFound": "Close without match"
+      },
+      "empty": {
+        "pending": "No pending announcements.",
+        "active": "No active announcements.",
+        "history": "No history yet."
+      }
+    },
     "logout": "Sign Out",
     "loggingOut": "Signing out...",
     "eyebrow": "Ted-University Lost & Found",
@@ -148,13 +193,11 @@
     "submit": "Save Changes",
     "submitting": "Saving...",
     "success": "Your profile has been updated successfully.",
-
     "auth": {
       "title": "Sign In Required",
       "description": "You need to be signed in to access your account page.",
       "cta": "Sign In"
     },
-
     "avatar": {
       "change": "Change profile photo",
       "alt": "Profile photo",
@@ -162,13 +205,11 @@
       "namePlaceholder": "Your Name",
       "emailPlaceholder": "your email"
     },
-
     "sections": {
       "personal": "Personal Information",
       "academic": "Academic Details",
       "password": "Change Password"
     },
-
     "fields": {
       "firstName": {
         "label": "First Name",
@@ -207,8 +248,112 @@
       "lastNameRequired": "Last name is required",
       "emailRequired": "Email is required",
       "emailInvalid": "Please enter a valid Ted University email (@ted-university.com)",
-      "passwordLength": "New password must be at least 6 characters",
+      "passwordLength": "New password must be at least 8 characters",
       "serverError": "Something went wrong. Please try again later."
     }
-  }
+  },
+  "announcements": {
+    "eyebrow": "Ted-University Lost & Found",
+    "title": "Announcements",
+    "subtitle": "Browse lost and found reports from across campus.",
+    "auth": {
+      "title": "Sign In Required",
+      "description": "You need to be signed in to view and post announcements.",
+      "cta": "Sign In"
+    },
+    "search": {
+      "placeholder": "Search announcements..."
+    },
+    "types": {
+      "lost": "Lost",
+      "found": "Found"
+    },
+    "filters": {
+      "type": "Filter by Type",
+      "all": "All",
+      "lost": "Lost",
+      "found": "Found",
+      "category": "Filter by Category",
+      "allCategories": "All Categories"
+    },
+    "categories": {
+      "electronics": "Electronics",
+      "clothing": "Clothing",
+      "bags": "Bags",
+      "keys": "Keys",
+      "documents": "Documents",
+      "jewelry": "Jewelry",
+      "books": "Books",
+      "sports": "Sports",
+      "other": "Other"
+    },
+    "compose": {
+      "prompt": "Share a lost or found item...",
+      "promptLost": "I lost something...",
+      "promptFound": "I found something...",
+      "guidedPrompt": "Did you lose something or find something?",
+      "guidedActive": "[[name]], this is a [[type]] announcement",
+      "signInToPost": "Sign in to post an announcement",
+      "typeLost": "I Lost",
+      "typeFound": "I Found",
+      "description": {
+        "label": "Description",
+        "placeholderLost": "Describe the lost item — color, brand, where you last had it...",
+        "placeholderFound": "Describe the item you found — where and when you found it..."
+      },
+      "category": {
+        "label": "Category",
+        "placeholder": "Select a category"
+      },
+      "image": {
+        "label": "Photo of the Item",
+        "click": "Click to upload",
+        "or": "or drag & drop",
+        "hint": "JPG, PNG or WEBP · max 5 MB"
+      },
+      "contact": {
+        "label": "Contact Info (at least one required)",
+        "facebook": "Facebook username",
+        "instagram": "Instagram username",
+        "phone": "Phone number",
+        "email": "Email address"
+      },
+      "footerHint": "At least one contact method is required.",
+      "cancel": "Cancel",
+      "submit": "Post",
+      "submitting": "Posting..."
+    },
+    "post": {
+      "imageAlt": "Item photo"
+    },
+    "empty": {
+      "title": "No announcements yet",
+      "description": "Be the first to post a lost or found item."
+    },
+    "success": "Your announcement has been posted!",
+    "pendingApproval": "Your announcement has been submitted! Please wait for an admin to approve it as soon as possible.",
+    "confirm": {
+      "title": "Confirm your announcement",
+      "description": "Please review your announcement before posting. You won't be able to edit it after submission.",
+      "type": "Type",
+      "category": "Category",
+      "description_label": "Description",
+      "contact": "Contact",
+      "image": "Photo",
+      "imageAttached": "[[count]] photo(s) attached",
+      "cancel": "Edit",
+      "submit": "Confirm & Post"
+    },
+    "errors": {
+      "descriptionRequired": "Please add a description.",
+      "descriptionMinLength": "Description must be at least 10 characters.",
+      "categoryRequired": "Please select a category.",
+      "imageRequired": "Please upload a photo of the item.",
+      "contactRequired": "Please provide at least one contact method.",
+      "contactEmailInvalid": "Contact email must be a valid email address.",
+      "usernameInvalid": "Please enter a username only, not a full URL.",
+      "serverError": "Something went wrong. Please try again later."
+    }
+  },
+  "common": { "loading": "Loading...", "language": "Language" }
 }

@@ -2,16 +2,21 @@ import { getRequestConfig } from "next-intl/server";
 import { routing, type Locale } from "./routing";
 
 export default getRequestConfig(async ({ requestLocale }) => {
-  // requestLocale is a Promise in next-intl v4
   let locale = await requestLocale;
 
-  // Fall back to default if locale is missing or invalid
+  // fallback
   if (!locale || !routing.locales.includes(locale as Locale)) {
     locale = routing.defaultLocale;
   }
 
+  const common = (await import(`../messages/${locale}.json`)).default;
+  const admin = (await import(`../messages/admin.${locale}.json`)).default;
+
   return {
     locale,
-    messages: (await import(`../messages/${locale}.json`)).default,
+    messages: {
+      ...common,
+      admin,
+    },
   };
 });

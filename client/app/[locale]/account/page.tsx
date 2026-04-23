@@ -10,6 +10,13 @@ import styles from "./account.module.css";
 
 type Year = "L1" | "L2" | "L3" | "M1" | "M2";
 type Specialty = "glsi" | "bd" | "isr" | "cloud" | "cyber";
+type AnnouncementStatus =
+  | "pending"
+  | "accepted"
+  | "rejected"
+  | "cancelled"
+  | "confirmed";
+type AnnouncementType = "lost" | "found";
 
 interface AccountData {
   firstName: string;
@@ -18,6 +25,8 @@ interface AccountData {
   year: Year | "";
   specialty: Specialty | "";
   userAvatar?: string;
+  banned?: boolean;
+  banExpiresAt?: string | null; // ISO date string or null for lifetime
 }
 
 interface FormErrors {
@@ -28,16 +37,53 @@ interface FormErrors {
   general?: string;
 }
 
+interface ContactInfo {
+  facebook?: string;
+  instagram?: string;
+  phone?: string;
+  email?: string;
+}
+
+interface Announcement {
+  id: string;
+  type: AnnouncementType;
+  category: string;
+  description: string;
+  status: AnnouncementStatus; // raw DB status (pending|accepted|rejected)
+  displayStatus: AnnouncementStatus; // computed: cancelled/confirmed override accepted
+  images?: string[];
+  contact?: ContactInfo;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface MyAnnouncementsResponse {
+  success: boolean;
+  data: Announcement[];
+  pagination?: { page: number; limit: number; total: number };
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "";
 
-/** Turns a server-relative path into a full URL for <img> src */
 function avatarSrc(path: string): string {
   if (!path) return "";
-  // Already a full URL (e.g. blob: or http:)
   if (path.startsWith("http") || path.startsWith("blob:")) return path;
   return `${API_URL}/${path.replace(/^\//, "")}`;
+}
+
+function imageSrc(path: string): string {
+  if (!path) return "";
+  if (path.startsWith("http") || path.startsWith("blob:")) return path;
+  return `${API_URL}/${path.replace(/^\//, "")}`;
+}
+
+function formatBanDate(isoString: string, locale: string): string {
+  return new Date(isoString).toLocaleString(locale, {
+    dateStyle: "long",
+    timeStyle: "short",
+  });
 }
 
 // ─── Specialty options by year ────────────────────────────────────────────────
@@ -153,6 +199,22 @@ const AlertIcon = () => (
   </svg>
 );
 
+const BanIcon = () => (
+  <svg
+    width="22"
+    height="22"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+  </svg>
+);
+
 const LogoutIcon = () => (
   <svg
     width="15"
@@ -169,6 +231,7 @@ const LogoutIcon = () => (
     <line x1="21" y1="12" x2="9" y2="12" />
   </svg>
 );
+
 const OkIcon = () => (
   <svg
     width="15"
@@ -234,6 +297,241 @@ const SignInIcon = () => (
   </svg>
 );
 
+const ClockIcon = () => (
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <polyline points="12 6 12 12 16 14" />
+  </svg>
+);
+
+const CheckCircleIcon = () => (
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+    <polyline points="22 4 12 14.01 9 11.01" />
+  </svg>
+);
+
+const XCircleIcon = () => (
+  <svg
+    width="13"
+    height="13"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="10" />
+    <line x1="15" y1="9" x2="9" y2="15" />
+    <line x1="9" y1="9" x2="15" y2="15" />
+  </svg>
+);
+
+const ImageIcon = () => (
+  <svg
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <polyline points="21 15 16 10 5 21" />
+  </svg>
+);
+
+// ─── Announcement Card Sub-component ──────────────────────────────────────────
+
+function AnnouncementCard({
+  ann,
+  onCancel,
+  onConfirm,
+  onClose,
+  actionLoading,
+}: {
+  ann: Announcement;
+  onCancel?: (id: string) => void;
+  onConfirm?: (id: string) => void;
+  onClose?: (id: string) => void;
+  actionLoading: string | null;
+}) {
+  const t = useTranslations("account");
+  const tAnn = useTranslations("announcements");
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+
+  const statusColor: Record<AnnouncementStatus, string> = {
+    pending: styles.statusPending,
+    accepted: styles.statusAccepted,
+    rejected: styles.statusRejected,
+    cancelled: styles.statusCancelled,
+    confirmed: styles.statusConfirmed,
+  };
+
+  const isLoading = actionLoading === ann.id;
+  // Use displayStatus for all UI decisions
+  const ds = ann.displayStatus;
+
+  return (
+    <>
+      {lightboxSrc && (
+        <div className={styles.lightbox} onClick={() => setLightboxSrc(null)}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightboxSrc}
+            alt=""
+            className={styles.lightboxImg}
+            onClick={(e) => e.stopPropagation()}
+          />
+          <button
+            className={styles.lightboxClose}
+            onClick={() => setLightboxSrc(null)}
+          >
+            ×
+          </button>
+        </div>
+      )}
+
+      <div className={styles.annCard}>
+        {/* Top row */}
+        <div className={styles.annCardTop}>
+          <div className={styles.annCardMeta}>
+            <span
+              className={`${styles.annTypeBadge} ${ann.type === "lost" ? styles.typeLost : styles.typeFound}`}
+            >
+              {tAnn(`types.${ann.type}`)}
+            </span>
+            <span className={`${styles.annStatusBadge} ${statusColor[ds]}`}>
+              {t(`announcements.statuses.${ds}`)}
+            </span>
+            <span className={styles.annCategory}>
+              {tAnn(`categories.${ann.category as keyof object}` as never)}
+            </span>
+          </div>
+          <span className={styles.annDate}>
+            <ClockIcon />
+            {new Date(ann.createdAt).toLocaleDateString()}
+          </span>
+        </div>
+
+        {/* Description */}
+        <p className={styles.annDescription}>{ann.description}</p>
+
+        {/* Images */}
+        {ann.images && ann.images.length > 0 && (
+          <div className={styles.annImages}>
+            {ann.images.map((img, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                key={i}
+                src={imageSrc(img)}
+                alt={tAnn("post.imageAlt")}
+                className={styles.annThumb}
+                onClick={() => setLightboxSrc(imageSrc(img))}
+              />
+            ))}
+          </div>
+        )}
+
+        {/* Contact info */}
+        {ann.contact && Object.values(ann.contact).some(Boolean) && (
+          <div className={styles.annContact}>
+            {ann.contact.email && <span>✉ {ann.contact.email}</span>}
+            {ann.contact.phone && <span>📞 {ann.contact.phone}</span>}
+            {ann.contact.facebook && <span>fb: {ann.contact.facebook}</span>}
+            {ann.contact.instagram && <span>ig: @{ann.contact.instagram}</span>}
+          </div>
+        )}
+
+        {/* Actions — only show on non-terminal displayStatuses */}
+        {(onCancel || onConfirm || onClose) && (
+          <div className={styles.annActions}>
+            {/* Cancel: allowed for pending and accepted (not yet cancelled/confirmed/rejected) */}
+            {onCancel && (ds === "pending" || ds === "accepted") && (
+              <button
+                className={styles.annBtnDanger}
+                onClick={() => onCancel(ann.id)}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span
+                    className={styles.spinner}
+                    style={{
+                      borderColor: "rgba(255,255,255,0.2)",
+                      borderTopColor: "#fff",
+                    }}
+                  />
+                ) : (
+                  <XCircleIcon />
+                )}
+                {t("announcements.actions.cancel")}
+              </button>
+            )}
+            {/* Confirm found: allowed for accepted only */}
+            {onConfirm && ds === "accepted" && (
+              <button
+                className={styles.annBtnSuccess}
+                onClick={() => onConfirm(ann.id)}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span
+                    className={styles.spinner}
+                    style={{
+                      borderColor: "rgba(17,17,17,0.2)",
+                      borderTopColor: "#111",
+                    }}
+                  />
+                ) : (
+                  <CheckCircleIcon />
+                )}
+                {t("announcements.actions.confirmFound")}
+              </button>
+            )}
+            {/* Close without found: allowed for accepted only */}
+            {onClose && ds === "accepted" && (
+              <button
+                className={styles.annBtnSecondary}
+                onClick={() => onClose(ann.id)}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className={styles.spinner} />
+                ) : (
+                  <XCircleIcon />
+                )}
+                {t("announcements.actions.closeNotFound")}
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function AccountPage() {
@@ -245,6 +543,10 @@ export default function AccountPage() {
   const [authState, setAuthState] = useState<
     "loading" | "unauthenticated" | "authenticated"
   >("loading");
+
+  // Ban state
+  const [banned, setBanned] = useState(false);
+  const [banExpiresAt, setBanExpiresAt] = useState<string | null>(null);
 
   // Form state
   const [form, setForm] = useState<
@@ -268,12 +570,27 @@ export default function AccountPage() {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [isPending, startTransition] = useTransition();
 
+  // Announcements state
+  const [myAnnouncements, setMyAnnouncements] = useState<Announcement[]>([]);
+  const [annLoading, setAnnLoading] = useState(false);
+  const [annActionLoading, setAnnActionLoading] = useState<string | null>(null);
+  const [annTab, setAnnTab] = useState<"pending" | "active" | "history">(
+    "pending",
+  );
+
+  // ── Confirm dialog state ──────────────────────────────────────────────────
+  const [confirmDialog, setConfirmDialog] = useState<{
+    id: string;
+    action: "cancel" | "confirm" | "close";
+  } | null>(null);
+
   // ── Auth check on mount ────────────────────────────────────────────────────
   useEffect(() => {
     initAuth().then((authenticated) => {
       if (authenticated) {
         setAuthState("authenticated");
         fetchAccount();
+        fetchMyAnnouncements();
       } else {
         setAuthState("unauthenticated");
       }
@@ -297,12 +614,85 @@ export default function AccountPage() {
         specialty: d.specialty ?? "",
         userAvatar: d.userAvatar ?? "",
       }));
-      // Prepend API base URL so the browser can load the image
       if (d.userAvatar) setAvatarPreview(avatarSrc(d.userAvatar));
+      if (d.banned) {
+        setBanned(true);
+        setBanExpiresAt(d.banExpiresAt ?? null);
+      }
     } catch {
-      // silent — form stays empty
+      // silent
     }
   }
+
+  // ── Fetch my announcements ─────────────────────────────────────────────────
+  async function fetchMyAnnouncements() {
+    setAnnLoading(true);
+    try {
+      const { data } = await api.get<MyAnnouncementsResponse>(
+        "/api/announcements/my",
+      );
+      setMyAnnouncements(data.data ?? []);
+    } catch {
+      // silent
+    } finally {
+      setAnnLoading(false);
+    }
+  }
+
+  // ── Announcement actions ───────────────────────────────────────────────────
+  async function handleCancelAnnouncement(id: string) {
+    setConfirmDialog({ id, action: "cancel" });
+  }
+
+  async function handleConfirmAnnouncement(id: string) {
+    setConfirmDialog({ id, action: "confirm" });
+  }
+
+  // "Close without found" = cancel an accepted announcement
+  async function handleCloseNotFound(id: string) {
+    setConfirmDialog({ id, action: "close" });
+  }
+
+  async function executeAction(
+    id: string,
+    action: "cancel" | "confirm" | "close",
+  ) {
+    setConfirmDialog(null);
+    setAnnActionLoading(id);
+    try {
+      if (action === "confirm") {
+        await api.patch(`/api/announcements/${id}/confirm`);
+        setMyAnnouncements((prev) =>
+          prev.map((a) =>
+            a.id === id ? { ...a, displayStatus: "confirmed" } : a,
+          ),
+        );
+      } else {
+        // cancel & close both call /cancel
+        await api.patch(`/api/announcements/${id}/cancel`);
+        setMyAnnouncements((prev) =>
+          prev.map((a) =>
+            a.id === id ? { ...a, displayStatus: "cancelled" } : a,
+          ),
+        );
+      }
+    } catch {
+      // silent
+    } finally {
+      setAnnActionLoading(null);
+    }
+  }
+
+  // ── Derived announcement lists ─────────────────────────────────────────────
+  const pendingAnns = myAnnouncements.filter(
+    (a) => a.displayStatus === "pending",
+  );
+  const activeAnns = myAnnouncements.filter(
+    (a) => a.displayStatus === "accepted",
+  );
+  const historyAnns = myAnnouncements.filter((a) =>
+    ["rejected", "cancelled", "confirmed"].includes(a.displayStatus),
+  );
 
   // ── Avatar upload ──────────────────────────────────────────────────────────
   function handleAvatarClick() {
@@ -312,23 +702,16 @@ export default function AccountPage() {
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // Instant local preview
     setAvatarPreview(URL.createObjectURL(file));
     setAvatarUploading(true);
-
     try {
       const formData = new FormData();
       formData.append("avatar", file);
-
       const { data } = await api.put<{ success: boolean; data: AccountData }>(
         "/api/account/picture",
         formData,
-        // Let the browser set the correct multipart Content-Type with boundary
         { headers: { "Content-Type": "multipart/form-data" } },
       );
-
-      // Update preview with the real server path
       if (data.data.userAvatar) {
         setAvatarPreview(avatarSrc(data.data.userAvatar));
         setForm((f) => ({ ...f, userAvatar: data.data.userAvatar ?? "" }));
@@ -337,7 +720,6 @@ export default function AccountPage() {
       setErrors((e) => ({ ...e, general: t("errors.serverError") }));
     } finally {
       setAvatarUploading(false);
-      // Reset input so the same file can be re-selected if needed
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
@@ -345,19 +727,16 @@ export default function AccountPage() {
   // ── Validation ─────────────────────────────────────────────────────────────
   function validate(): boolean {
     const errs: FormErrors = {};
-
     if (!form.firstName.trim()) {
       errs.firstName = t("errors.firstNameRequired");
     } else if (form.firstName.trim().length < 2) {
       errs.firstName = t("errors.firstNameMinLength");
     }
-
     if (!form.lastName.trim()) {
       errs.lastName = t("errors.lastNameRequired");
     } else if (form.lastName.trim().length < 2) {
       errs.lastName = t("errors.lastNameMinLength");
     }
-
     if (!form.email.trim()) {
       errs.email = t("errors.emailRequired");
     } else if (
@@ -365,11 +744,9 @@ export default function AccountPage() {
     ) {
       errs.email = t("errors.emailInvalid");
     }
-
     if (form.newPassword && form.newPassword.length < 6) {
       errs.newPassword = t("errors.passwordLength");
     }
-
     setErrors(errs);
     return Object.keys(errs).length === 0;
   }
@@ -380,24 +757,19 @@ export default function AccountPage() {
     if (!validate()) return;
     setErrors({});
     setSuccessMsg("");
-
     startTransition(async () => {
       try {
-        // Allow null so that an unselected dropdown clears the field in the DB
         const payload: Record<string, string | null> = {
           firstName: form.firstName.trim(),
           lastName: form.lastName.trim(),
           email: form.email.trim().toLowerCase(),
-          year: form.year || null, // "" → null (no selection)
-          specialty: form.specialty || null, // "" → null (no selection)
+          year: form.year || null,
+          specialty: form.specialty || null,
         };
-
         if (form.currentPassword)
           payload.currentPassword = form.currentPassword;
         if (form.newPassword) payload.newPassword = form.newPassword;
-        // userAvatar is handled separately via /api/account/picture — not sent here
-
-        await api.put("/api/account/edit", payload); // PUT, not PATCH
+        await api.put("/api/account/edit", payload);
         setSuccessMsg(t("success"));
         setForm((f) => ({ ...f, currentPassword: "", newPassword: "" }));
       } catch {
@@ -416,7 +788,6 @@ export default function AccountPage() {
     if (successMsg) setSuccessMsg("");
   }
 
-  // When year changes, reset specialty if incompatible
   function handleYearChange(year: Year | "") {
     const validSpecialties = getSpecialties(year);
     setForm((f) => ({
@@ -428,7 +799,6 @@ export default function AccountPage() {
     }));
   }
 
-  // ── Initials for avatar placeholder ───────────────────────────────────────
   const initials =
     (form.firstName?.[0] ?? "") + (form.lastName?.[0] ?? "") || "?";
 
@@ -439,18 +809,60 @@ export default function AccountPage() {
     try {
       await api.post("/api/auth/logout");
     } catch {
-      // even if it fails, redirect anyway
+      // ignore
     } finally {
       setIsLoggingOut(false);
       window.location.href = `/${locale}/login`;
     }
   }
+
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className={styles.pageWrap} suppressHydrationWarning>
       <div className={styles.pageBg} />
 
-      {/* ── Not authenticated modal ────────────────────────────────────────── */}
+      {/* ── Confirm Action Dialog ────────────────────────────────────────── */}
+      {confirmDialog && (
+        <div className={styles.authOverlay} style={{ zIndex: 200 }}>
+          <div className={styles.authModal}>
+            <div className={styles.authModalIcon}>
+              {confirmDialog.action === "confirm" ? (
+                <CheckCircleIcon />
+              ) : (
+                <XCircleIcon />
+              )}
+            </div>
+            <h2 className={styles.authModalTitle}>
+              {t(`announcements.confirm.${confirmDialog.action}.title`)}
+            </h2>
+            <p className={styles.authModalDesc}>
+              {t(`announcements.confirm.${confirmDialog.action}.description`)}
+            </p>
+            <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+              <button
+                className={styles.annBtnSecondary}
+                onClick={() => setConfirmDialog(null)}
+              >
+                {t("announcements.confirm.cancelBtn")}
+              </button>
+              <button
+                className={
+                  confirmDialog.action === "confirm"
+                    ? styles.annBtnSuccess
+                    : styles.annBtnDanger
+                }
+                onClick={() =>
+                  executeAction(confirmDialog.id, confirmDialog.action)
+                }
+              >
+                {t("announcements.confirm.okBtn")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Not authenticated modal ──────────────────────────────────────── */}
       {authState === "unauthenticated" && (
         <div className={styles.authOverlay}>
           <div className={styles.authModal}>
@@ -467,7 +879,7 @@ export default function AccountPage() {
         </div>
       )}
 
-      {/* ── Loading ────────────────────────────────────────────────────────── */}
+      {/* ── Loading ──────────────────────────────────────────────────────── */}
       {authState === "loading" && (
         <div className={styles.loadingWrap}>
           <div className={styles.loadingSpinner} />
@@ -475,9 +887,32 @@ export default function AccountPage() {
         </div>
       )}
 
-      {/* ── Main card ─────────────────────────────────────────────────────── */}
+      {/* ── Main card ────────────────────────────────────────────────────── */}
       {authState === "authenticated" && (
         <div className={styles.card}>
+          {/* ── Ban Banner ─────────────────────────────────────────────── */}
+          {banned && (
+            <div className={styles.banBanner}>
+              <div className={styles.banBannerIcon}>
+                <BanIcon />
+              </div>
+              <div className={styles.banBannerContent}>
+                <p className={styles.banBannerTitle}>
+                  {banExpiresAt
+                    ? t("ban.titleTemporary")
+                    : t("ban.titleLifetime")}
+                </p>
+                <p className={styles.banBannerDesc}>
+                  {banExpiresAt
+                    ? t("ban.descriptionTemporary", {
+                        date: formatBanDate(banExpiresAt, locale),
+                      })
+                    : t("ban.descriptionLifetime")}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Header */}
           <div className={styles.cardHeader}>
             <div className={styles.cardHeaderRow}>
@@ -527,7 +962,6 @@ export default function AccountPage() {
                   {initials.toUpperCase()}
                 </div>
               )}
-
               {avatarUploading ? (
                 <div className={styles.avatarUploading}>
                   <div className={styles.loadingSpinner} />
@@ -537,7 +971,6 @@ export default function AccountPage() {
                   <CameraIcon />
                 </div>
               )}
-
               <input
                 ref={fileInputRef}
                 type="file"
@@ -546,7 +979,6 @@ export default function AccountPage() {
                 onChange={handleAvatarChange}
               />
             </div>
-
             <div className={styles.avatarInfo}>
               <h3>
                 {form.firstName || form.lastName
@@ -581,7 +1013,7 @@ export default function AccountPage() {
                 </div>
               )}
 
-              {/* ── Personal info divider ────────────────────────────────── */}
+              {/* Personal info divider */}
               <div
                 className={`${styles.sectionDivider} ${styles.formGridFull}`}
               >
@@ -666,7 +1098,7 @@ export default function AccountPage() {
                 )}
               </div>
 
-              {/* ── Academic info divider ────────────────────────────────── */}
+              {/* Academic info divider */}
               <div
                 className={`${styles.sectionDivider} ${styles.formGridFull}`}
               >
@@ -760,7 +1192,7 @@ export default function AccountPage() {
                 </div>
               </div>
 
-              {/* ── Password divider ─────────────────────────────────────── */}
+              {/* Password divider */}
               <div
                 className={`${styles.sectionDivider} ${styles.formGridFull}`}
               >
@@ -858,6 +1290,121 @@ export default function AccountPage() {
               </div>
             </div>
           </form>
+
+          {/* ── My Announcements Section ──────────────────────────────── */}
+          <div className={styles.annSection}>
+            {/* Section header */}
+            <div
+              className={`${styles.sectionDivider} ${styles.annSectionHeader}`}
+            >
+              <span className={styles.sectionDividerLabel}>
+                {t("announcements.title")}
+              </span>
+              <div className={styles.sectionDividerLine} />
+            </div>
+
+            {/* Tabs */}
+            <div className={styles.annTabs}>
+              <button
+                className={`${styles.annTab} ${annTab === "pending" ? styles.annTabActive : ""}`}
+                onClick={() => setAnnTab("pending")}
+              >
+                {t("announcements.tabs.pending")}
+                {pendingAnns.length > 0 && (
+                  <span className={styles.annTabCount}>
+                    {pendingAnns.length}
+                  </span>
+                )}
+              </button>
+              <button
+                className={`${styles.annTab} ${annTab === "active" ? styles.annTabActive : ""}`}
+                onClick={() => setAnnTab("active")}
+              >
+                {t("announcements.tabs.active")}
+                {activeAnns.length > 0 && (
+                  <span className={styles.annTabCount}>
+                    {activeAnns.length}
+                  </span>
+                )}
+              </button>
+              <button
+                className={`${styles.annTab} ${annTab === "history" ? styles.annTabActive : ""}`}
+                onClick={() => setAnnTab("history")}
+              >
+                {t("announcements.tabs.history")}
+              </button>
+            </div>
+
+            {/* Tab content */}
+            {annLoading ? (
+              <div className={styles.annLoading}>
+                <div className={styles.loadingSpinner} />
+              </div>
+            ) : (
+              <div className={styles.annList}>
+                {/* Pending */}
+                {annTab === "pending" &&
+                  (pendingAnns.length === 0 ? (
+                    <div className={styles.annEmpty}>
+                      <span className={styles.annEmptyIcon}>
+                        <ClockIcon />
+                      </span>
+                      <p>{t("announcements.empty.pending")}</p>
+                    </div>
+                  ) : (
+                    pendingAnns.map((ann) => (
+                      <AnnouncementCard
+                        key={ann.id}
+                        ann={ann}
+                        onCancel={handleCancelAnnouncement}
+                        actionLoading={annActionLoading}
+                      />
+                    ))
+                  ))}
+
+                {/* Active */}
+                {annTab === "active" &&
+                  (activeAnns.length === 0 ? (
+                    <div className={styles.annEmpty}>
+                      <span className={styles.annEmptyIcon}>
+                        <CheckCircleIcon />
+                      </span>
+                      <p>{t("announcements.empty.active")}</p>
+                    </div>
+                  ) : (
+                    activeAnns.map((ann) => (
+                      <AnnouncementCard
+                        key={ann.id}
+                        ann={ann}
+                        onCancel={handleCancelAnnouncement}
+                        onConfirm={handleConfirmAnnouncement}
+                        onClose={handleCloseNotFound}
+                        actionLoading={annActionLoading}
+                      />
+                    ))
+                  ))}
+
+                {/* History */}
+                {annTab === "history" &&
+                  (historyAnns.length === 0 ? (
+                    <div className={styles.annEmpty}>
+                      <span className={styles.annEmptyIcon}>
+                        <ImageIcon />
+                      </span>
+                      <p>{t("announcements.empty.history")}</p>
+                    </div>
+                  ) : (
+                    historyAnns.map((ann) => (
+                      <AnnouncementCard
+                        key={ann.id}
+                        ann={ann}
+                        actionLoading={annActionLoading}
+                      />
+                    ))
+                  ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

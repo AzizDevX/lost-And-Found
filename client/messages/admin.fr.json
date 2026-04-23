@@ -1,0 +1,237 @@
+{
+  "meta": {
+    "title": "Tableau de Bord Admin",
+    "subtitle": "Panneau de contrôle — Objets Trouvés TED"
+  },
+  "nav": {
+    "overview": "Vue d'ensemble",
+    "announcements": "Annonces",
+    "users": "Utilisateurs",
+    "logs": "Journaux d'audit",
+    "logout": "Déconnexion"
+  },
+  "overview": {
+    "title": "Tableau de Bord",
+    "eyebrow": "Vue d'ensemble",
+    "welcome": "Bon retour",
+    "stats": {
+      "pending": "En attente",
+      "accepted": "Acceptées",
+      "rejected": "Rejetées",
+      "totalUsers": "Utilisateurs totaux",
+      "banned": "Utilisateurs bannis",
+      "totalAnnouncements": "Total des annonces",
+      "returned": "Objets rendus",
+      "active": "Objets actifs"
+    },
+    "recentActivity": "Activité récente",
+    "noActivity": "Aucune activité récente",
+    "quickActions": "Actions rapides",
+    "reviewQueue": "File d'attente",
+    "goToAnnouncements": "Examiner les annonces",
+    "goToUsers": "Gérer les utilisateurs"
+  },
+  "announcements": {
+    "title": "Annonces",
+    "eyebrow": "Gestion",
+    "filters": {
+      "all": "Toutes",
+      "pending": "En attente",
+      "accepted": "Acceptées",
+      "rejected": "Rejetées"
+    },
+    "table": {
+      "author": "Auteur",
+      "type": "Type",
+      "category": "Catégorie",
+      "status": "Statut",
+      "date": "Date",
+      "actions": "Actions"
+    },
+    "types": {
+      "lost": "Perdu",
+      "found": "Trouvé"
+    },
+    "status": {
+      "pending": "En attente",
+      "accepted": "Acceptée",
+      "rejected": "Rejetée",
+      "cancelled": "Annulée",
+      "confirmed": "Confirmée"
+    },
+    "actions": {
+      "accept": "Accepter",
+      "reject": "Rejeter",
+      "delete": "Supprimer",
+      "view": "Voir",
+      "markReturned": "Marquer rendu",
+      "markActive": "Marquer actif"
+    },
+    "modal": {
+      "descriptionLabel": "Description",
+      "rejectionReasonLabel": "Raison du rejet",
+      "rejectReasonPreview": "Raison",
+      "rejectTitle": "Rejeter l'annonce",
+      "rejectPlaceholder": "Raison du rejet (optionnel)...",
+      "deleteTitle": "Supprimer l'annonce",
+      "deleteConfirm": "Cette action est permanente et irréversible. L'annonce et toutes ses images seront supprimées.",
+      "viewTitle": "Détails de l'annonce",
+      "confirmAcceptTitle": "Accepter l'annonce",
+      "confirmAcceptMessage": "Êtes-vous sûr de vouloir accepter cette annonce ? Elle apparaîtra dans le fil public.",
+      "confirmRejectTitle": "Rejeter l'annonce",
+      "confirmRejectMessage": "Êtes-vous sûr de vouloir rejeter cette annonce ?",
+      "confirmReturnTitle": "Marquer comme rendu",
+      "confirmReturnMessage": "Marquer cet objet comme rendu ? Il sera retiré du fil actif.",
+      "confirmUnreturnTitle": "Marquer comme actif",
+      "confirmUnreturnMessage": "Restaurer cette annonce dans le fil actif ?",
+      "confirm": "Confirmer",
+      "cancel": "Annuler"
+    },
+    "empty": "Aucune annonce trouvée",
+    "loadMore": "Charger plus"
+  },
+  "users": {
+    "history": {
+      "title": "Profil & Historique",
+      "joined": "Inscrit le",
+      "totalPosts": "Total des posts",
+      "bannedStatus": "Cet utilisateur est actuellement banni",
+      "bannedAt": "Banni le"
+    },
+    "title": "Utilisateurs",
+    "eyebrow": "Gestion",
+    "search": "Rechercher par nom ou email...",
+    "filters": {
+      "all": "Tous les utilisateurs",
+      "banned": "Bannis seulement",
+      "active": "Actifs seulement"
+    },
+    "table": {
+      "user": "Utilisateur",
+      "email": "Email",
+      "announcements": "Annonces",
+      "status": "Statut",
+      "joined": "Inscrit le",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Actif",
+      "banned": "Banni"
+    },
+    "actions": {
+      "ban": "Bannir",
+      "unban": "Débannir",
+      "viewHistory": "Voir les annonces"
+    },
+    "modal": {
+      "banTypeLabel": "Type de bannissement",
+      "banTypePermanent": "Permanent",
+      "banTypeTemporary": "Temporaire",
+      "banDurationLabel": "Durée",
+      "banDuration1": "1 jour",
+      "banDuration3": "3 jours",
+      "banDuration7": "7 jours",
+      "banDuration14": "14 jours",
+      "banDuration30": "30 jours",
+      "banDuration90": "90 jours",
+      "banReasonMinErr": "La raison doit comporter au moins 5 caractères.",
+      "banReasonMaxErr": "La raison ne doit pas dépasser 300 caractères.",
+      "banTitle": "Bannir l'utilisateur",
+      "banReasonLabel": "Raison du bannissement",
+      "banReasonPlaceholder": "Indiquez une raison claire (min. 5 caractères)...",
+      "banReasonHint": "Cette raison est enregistrée dans le journal d'audit.",
+      "unbanTitle": "Débannir l'utilisateur",
+      "unbanConfirm": "Êtes-vous sûr de vouloir débannir cet utilisateur ?",
+      "confirm": "Confirmer",
+      "cancel": "Annuler"
+    },
+    "announcements": {
+      "title": "Annonces de",
+      "empty": "Aucune annonce trouvée pour cet utilisateur"
+    },
+    "empty": "Aucun utilisateur trouvé",
+    "banReason": "Raison"
+  },
+  "logs": {
+    "title": "Journaux d'audit",
+    "eyebrow": "Superadmin",
+    "filters": {
+      "period": "Période",
+      "days7": "7 derniers jours",
+      "days30": "30 derniers jours",
+      "days90": "90 derniers jours",
+      "action": "Type d'action",
+      "all": "Toutes les actions"
+    },
+    "table": {
+      "admin": "Admin",
+      "action": "Action",
+      "target": "Cible",
+      "ip": "IP",
+      "date": "Date"
+    },
+    "summary": {
+      "title": "Résumé d'activité",
+      "total": "Total des actions",
+      "period": "Période"
+    },
+    "empty": "Aucun journal trouvé",
+    "actions": {
+      "ANNOUNCEMENT_ACCEPTED": "Annonce acceptée",
+      "ANNOUNCEMENT_REJECTED": "Annonce rejetée",
+      "ANNOUNCEMENT_DELETED": "Annonce supprimée",
+      "ANNOUNCEMENT_MARK_RETURNED_TOGGLED": "Statut de retour modifié",
+      "USER_BANNED": "Utilisateur banni",
+      "USER_UNBANNED": "Utilisateur débanni",
+      "USER_HISTORY_VIEWED": "Historique consulté",
+      "ADMIN_LOGIN": "Connexion admin",
+      "ADMIN_LOGOUT": "Déconnexion admin",
+      "ADMIN_REFRESH": "Token actualisé"
+    }
+  },
+  "common": {
+    "loading": "Chargement...",
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer",
+    "noData": "Aucune donnée disponible",
+    "page": "Page",
+    "of": "sur",
+    "prev": "Précédent",
+    "next": "Suivant",
+    "close": "Fermer",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "confirm": "Confirmer",
+    "cancel": "Annuler",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "refresh": "Actualiser",
+    "timeAgo": {
+      "justNow": "à l'instant",
+      "minutesAgo": "il y a {{n}}min",
+      "hoursAgo": "il y a {{n}}h",
+      "daysAgo": "il y a {{n}}j"
+    }
+  },
+  "auth": {
+    "loginTitle": "Connexion Admin",
+    "loginSubtitle": "Accès restreint — TED University",
+    "email": "Adresse email",
+    "password": "Mot de passe",
+    "login": "Se connecter",
+    "loggingIn": "Connexion...",
+    "invalidCredentials": "Email ou mot de passe invalide.",
+    "sessionExpired": "Session expirée. Veuillez vous reconnecter."
+  },
+  "categories": {
+    "electronics": "Électronique",
+    "clothing": "Vêtements",
+    "bags": "Sacs",
+    "keys": "Clés",
+    "documents": "Documents",
+    "jewelry": "Bijoux",
+    "books": "Livres",
+    "sports": "Sports",
+    "other": "Autre"
+  }
+}

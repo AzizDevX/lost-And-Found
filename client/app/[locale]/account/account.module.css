@@ -713,3 +713,414 @@
     flex-direction: column;
   }
 }
+/* ── Ban notice ───────────────────────────────────────────────────────────────── */
+
+.banNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  background: rgba(239, 68, 68, 0.07);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 12px;
+  margin-bottom: 28px;
+  animation: fadeUp 0.3s ease;
+}
+
+.banNoticeIcon {
+  flex-shrink: 0;
+  color: #f87171;
+  margin-top: 2px;
+}
+
+.banNoticeBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.banNoticeTitle {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 700;
+  color: #f87171;
+}
+
+.banNoticeMsg {
+  font-size: 13px;
+  color: rgba(248, 113, 113, 0.8);
+  line-height: 1.55;
+}
+
+/* ── Announcements section ───────────────────────────────────────────────────── */
+
+.annSection {
+  margin-top: 36px;
+}
+
+.annSectionHeader {
+  margin-bottom: 16px;
+}
+
+/* ── Tabs ────────────────────────────────────────────────────────────────────── */
+
+.annTabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.annTab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 14px;
+  background: transparent;
+  border: none;
+  border-radius: 7px;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+}
+
+.annTab:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.annTabActive {
+  background: var(--yellow-dim);
+  color: var(--accent);
+  border: 1px solid var(--yellow-border);
+}
+
+.annTabCount {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: var(--accent);
+  color: #111;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 20px;
+}
+
+/* ── Announcement list ───────────────────────────────────────────────────────── */
+
+.annLoading {
+  display: flex;
+  justify-content: center;
+  padding: 32px 0;
+}
+
+.annList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.annEmpty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 36px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.annEmptyIcon {
+  opacity: 0.4;
+}
+
+/* ── Announcement card ───────────────────────────────────────────────────────── */
+
+.annCard {
+  background: #0f1623;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  animation: fadeUp 0.25s ease;
+}
+
+.annCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.annCardMeta {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.annTypeBadge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+
+.typeLost {
+  background: rgba(251, 146, 60, 0.12);
+  color: #fb923c;
+  border: 1px solid rgba(251, 146, 60, 0.25);
+}
+
+.typeFound {
+  background: rgba(52, 211, 153, 0.1);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.2);
+}
+
+.annStatusBadge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 20px;
+}
+
+.statusPending {
+  background: rgba(245, 200, 0, 0.1);
+  color: var(--accent);
+  border: 1px solid var(--yellow-border);
+}
+
+.statusAccepted {
+  background: rgba(96, 165, 250, 0.1);
+  color: #60a5fa;
+  border: 1px solid rgba(96, 165, 250, 0.2);
+}
+
+.statusRejected {
+  background: rgba(248, 113, 113, 0.08);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+.statusCancelled {
+  background: rgba(156, 163, 175, 0.08);
+  color: #9ca3af;
+  border: 1px solid rgba(156, 163, 175, 0.15);
+}
+
+.statusConfirmed {
+  background: rgba(52, 211, 153, 0.08);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.18);
+}
+
+.annCategory {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.annDate {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.annDescription {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Announcement images / lightbox ──────────────────────────────────────────── */
+
+.annImages {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.annThumb {
+  width: 72px;
+  height: 72px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  cursor: pointer;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+}
+
+.annThumb:hover {
+  opacity: 0.85;
+  transform: scale(1.04);
+}
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.88);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.2s ease;
+  cursor: pointer;
+}
+
+.lightboxImg {
+  max-width: 90vw;
+  max-height: 85vh;
+  object-fit: contain;
+  border-radius: 10px;
+  cursor: default;
+}
+
+.lightboxClose {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  color: #fff;
+  font-size: 24px;
+  line-height: 1;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.lightboxClose:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Contact row ─────────────────────────────────────────────────────────────── */
+
+.annContact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── Card action buttons ─────────────────────────────────────────────────────── */
+
+.annActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.annBtnDanger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(248, 113, 113, 0.08);
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  border-radius: 7px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.annBtnDanger:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.15);
+  border-color: rgba(248, 113, 113, 0.35);
+}
+
+.annBtnSuccess {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: var(--accent);
+  color: #111;
+  border: none;
+  border-radius: 7px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    transform 0.1s;
+}
+
+.annBtnSuccess:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.annBtnSecondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(156, 163, 175, 0.07);
+  color: #9ca3af;
+  border: 1px solid rgba(156, 163, 175, 0.15);
+  border-radius: 7px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+}
+
+.annBtnSecondary:hover:not(:disabled) {
+  background: rgba(156, 163, 175, 0.13);
+  border-color: rgba(156, 163, 175, 0.28);
+}
+
+.annBtnDanger:disabled,
+.annBtnSuccess:disabled,
+.annBtnSecondary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.authModal > div[style] {
+  justify-content: center;
+}

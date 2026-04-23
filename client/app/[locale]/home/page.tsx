@@ -2,8 +2,48 @@
 
 import Link from "next/link";
 import { useTranslations, useLocale } from "next-intl";
+import { useEffect, useState } from "react";
 import { type Locale } from "@/i18n";
 import styles from "./home.module.css";
+
+// ── Live stats hook (SSE → fallback REST) ─────────────────────────────────────
+interface LiveStats {
+  itemsReported: number;
+  itemsReturned: number;
+  activeAnnouncements: number;
+}
+
+function useLiveStats() {
+  const [stats, setStats] = useState<LiveStats | null>(null);
+
+  useEffect(() => {
+    // Try SSE first — gives real-time updates without polling
+    const es = new EventSource(
+      `${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/announcements/stats/live`,
+    );
+
+    es.addEventListener("update", (e) => {
+      try {
+        setStats(JSON.parse(e.data));
+      } catch {}
+    });
+
+    es.onerror = () => {
+      es.close();
+      // Fallback: one-shot REST fetch
+      fetch(`${process.env.NEXT_PUBLIC_API_URL ?? ""}/api/announcements/stats`)
+        .then((r) => r.json())
+        .then((json) => {
+          if (json?.success) setStats(json.data);
+        })
+        .catch(() => {});
+    };
+
+    return () => es.close();
+  }, []);
+
+  return stats;
+}
 
 // ── Stat icons ────────────────────────────────────────────────────────────────
 const BoxIcon = () => (
@@ -57,6 +97,7 @@ const MegaphoneIcon = () => (
 export default function HomePage() {
   const t = useTranslations("home");
   const locale = useLocale() as Locale;
+  const stats = useLiveStats();
 
   return (
     <div className={styles.pageWrap}>
@@ -85,7 +126,13 @@ export default function HomePage() {
                 <BoxIcon />
               </div>
               <div className={styles.statInfo}>
-                <strong>{t("stats.soon")}</strong>
+                <strong>
+                  {stats ? (
+                    stats.itemsReported.toLocaleString(locale)
+                  ) : (
+                    <span className={styles.statSkeleton} />
+                  )}
+                </strong>
                 <span>{t("stats.itemsReported")}</span>
               </div>
             </div>
@@ -95,7 +142,13 @@ export default function HomePage() {
                 <CheckIcon />
               </div>
               <div className={styles.statInfo}>
-                <strong>{t("stats.soon")}</strong>
+                <strong>
+                  {stats ? (
+                    stats.itemsReturned.toLocaleString(locale)
+                  ) : (
+                    <span className={styles.statSkeleton} />
+                  )}
+                </strong>
                 <span>{t("stats.itemsReturned")}</span>
               </div>
             </div>
@@ -105,7 +158,13 @@ export default function HomePage() {
                 <MegaphoneIcon />
               </div>
               <div className={styles.statInfo}>
-                <strong>{t("stats.soon")}</strong>
+                <strong>
+                  {stats ? (
+                    stats.activeAnnouncements.toLocaleString(locale)
+                  ) : (
+                    <span className={styles.statSkeleton} />
+                  )}
+                </strong>
                 <span>{t("stats.announcements")}</span>
               </div>
             </div>

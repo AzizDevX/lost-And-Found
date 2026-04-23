@@ -20,7 +20,13 @@ export const localeDir: Record<Locale, "ltr" | "rtl"> = {
 export default getRequestConfig(async ({ locale }) => {
   if (!locales.includes(locale as Locale)) notFound();
 
+  const common = (await import(`./messages/${locale}.json`)).default;
+  const admin = (await import(`./messages/admin.${locale}.json`)).default;
+
   return {
-    messages: (await import(`./messages/${locale}.json`)).default,
+    messages: {
+      ...common,
+      admin,
+    },
   };
 });

@@ -1,0 +1,237 @@
+{
+  "meta": {
+    "title": "Admin Dashboard",
+    "subtitle": "Control panel for TED University Lost & Found"
+  },
+  "nav": {
+    "overview": "Overview",
+    "announcements": "Announcements",
+    "users": "Users",
+    "logs": "Audit Logs",
+    "logout": "Logout"
+  },
+  "overview": {
+    "title": "Dashboard",
+    "eyebrow": "Overview",
+    "welcome": "Welcome back",
+    "stats": {
+      "pending": "Pending Review",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "totalUsers": "Total Users",
+      "banned": "Banned Users",
+      "totalAnnouncements": "Total Announcements",
+      "returned": "Items Returned",
+      "active": "Active Items"
+    },
+    "recentActivity": "Recent Activity",
+    "noActivity": "No recent activity",
+    "quickActions": "Quick Actions",
+    "reviewQueue": "Review Queue",
+    "goToAnnouncements": "Review Pending",
+    "goToUsers": "Manage Users"
+  },
+  "announcements": {
+    "title": "Announcements",
+    "eyebrow": "Management",
+    "filters": {
+      "all": "All",
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "rejected": "Rejected"
+    },
+    "table": {
+      "author": "Author",
+      "type": "Type",
+      "category": "Category",
+      "status": "Status",
+      "date": "Date",
+      "actions": "Actions"
+    },
+    "types": {
+      "lost": "Lost",
+      "found": "Found"
+    },
+    "status": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled",
+      "confirmed": "Confirmed"
+    },
+    "actions": {
+      "accept": "Accept",
+      "reject": "Reject",
+      "delete": "Delete",
+      "view": "View",
+      "markReturned": "Mark Returned",
+      "markActive": "Mark Active"
+    },
+    "modal": {
+      "descriptionLabel": "Description",
+      "rejectionReasonLabel": "Rejection reason",
+      "rejectReasonPreview": "Reason",
+      "rejectTitle": "Reject Announcement",
+      "rejectPlaceholder": "Reason for rejection (optional)...",
+      "deleteTitle": "Delete Announcement",
+      "deleteConfirm": "This action is permanent and cannot be undone. The announcement and all its images will be deleted.",
+      "viewTitle": "Announcement Details",
+      "confirmAcceptTitle": "Accept Announcement",
+      "confirmAcceptMessage": "Are you sure you want to accept this announcement? It will appear in the public feed.",
+      "confirmRejectTitle": "Reject Announcement",
+      "confirmRejectMessage": "Are you sure you want to reject this announcement?",
+      "confirmReturnTitle": "Mark as Returned",
+      "confirmReturnMessage": "Mark this item as returned? It will be removed from the active feed.",
+      "confirmUnreturnTitle": "Mark as Active",
+      "confirmUnreturnMessage": "Restore this announcement to the active feed?",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    },
+    "empty": "No announcements found",
+    "loadMore": "Load more"
+  },
+  "users": {
+    "history": {
+      "title": "User Profile & History",
+      "joined": "Joined",
+      "totalPosts": "Total Posts",
+      "bannedStatus": "This user is currently banned",
+      "bannedAt": "Banned on"
+    },
+    "title": "Users",
+    "eyebrow": "Management",
+    "search": "Search by name or email...",
+    "filters": {
+      "all": "All Users",
+      "banned": "Banned Only",
+      "active": "Active Only"
+    },
+    "table": {
+      "user": "User",
+      "email": "Email",
+      "announcements": "Posts",
+      "status": "Status",
+      "joined": "Joined",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "banned": "Banned"
+    },
+    "actions": {
+      "ban": "Ban",
+      "unban": "Unban",
+      "viewHistory": "View Posts"
+    },
+    "modal": {
+      "banTypeLabel": "Ban type",
+      "banTypePermanent": "Permanent",
+      "banTypeTemporary": "Temporary",
+      "banDurationLabel": "Duration",
+      "banDuration1": "1 day",
+      "banDuration3": "3 days",
+      "banDuration7": "7 days",
+      "banDuration14": "14 days",
+      "banDuration30": "30 days",
+      "banDuration90": "90 days",
+      "banReasonMinErr": "Reason must be at least 5 characters.",
+      "banReasonMaxErr": "Reason must not exceed 300 characters.",
+      "banTitle": "Ban User",
+      "banReasonLabel": "Ban reason",
+      "banReasonPlaceholder": "State a clear reason (min. 5 characters)...",
+      "banReasonHint": "This reason is stored in the audit log.",
+      "unbanTitle": "Unban User",
+      "unbanConfirm": "Are you sure you want to unban this user?",
+      "confirm": "Confirm",
+      "cancel": "Cancel"
+    },
+    "announcements": {
+      "title": "Announcements by",
+      "empty": "No announcements found for this user"
+    },
+    "empty": "No users found",
+    "banReason": "Reason"
+  },
+  "logs": {
+    "title": "Audit Logs",
+    "eyebrow": "Superadmin",
+    "filters": {
+      "period": "Period",
+      "days7": "Last 7 days",
+      "days30": "Last 30 days",
+      "days90": "Last 90 days",
+      "action": "Action type",
+      "all": "All actions"
+    },
+    "table": {
+      "admin": "Admin",
+      "action": "Action",
+      "target": "Target",
+      "ip": "IP",
+      "date": "Date"
+    },
+    "summary": {
+      "title": "Activity Summary",
+      "total": "Total actions",
+      "period": "Period"
+    },
+    "empty": "No logs found",
+    "actions": {
+      "ANNOUNCEMENT_ACCEPTED": "Announcement accepted",
+      "ANNOUNCEMENT_REJECTED": "Announcement rejected",
+      "ANNOUNCEMENT_DELETED": "Announcement deleted",
+      "ANNOUNCEMENT_MARK_RETURNED_TOGGLED": "Returned status toggled",
+      "USER_BANNED": "User banned",
+      "USER_UNBANNED": "User unbanned",
+      "USER_HISTORY_VIEWED": "User history viewed",
+      "ADMIN_LOGIN": "Admin login",
+      "ADMIN_LOGOUT": "Admin logout",
+      "ADMIN_REFRESH": "Token refreshed"
+    }
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "noData": "No data available",
+    "page": "Page",
+    "of": "of",
+    "prev": "Previous",
+    "next": "Next",
+    "close": "Close",
+    "save": "Save",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "search": "Search",
+    "filter": "Filter",
+    "refresh": "Refresh",
+    "timeAgo": {
+      "justNow": "just now",
+      "minutesAgo": "{{n}}m ago",
+      "hoursAgo": "{{n}}h ago",
+      "daysAgo": "{{n}}d ago"
+    }
+  },
+  "auth": {
+    "loginTitle": "Admin Login",
+    "loginSubtitle": "Restricted access — TED University",
+    "email": "Email address",
+    "password": "Password",
+    "login": "Sign in",
+    "loggingIn": "Signing in...",
+    "invalidCredentials": "Invalid email or password.",
+    "sessionExpired": "Session expired. Please login again."
+  },
+  "categories": {
+    "electronics": "Electronics",
+    "clothing": "Clothing",
+    "bags": "Bags",
+    "keys": "Keys",
+    "documents": "Documents",
+    "jewelry": "Jewelry",
+    "books": "Books",
+    "sports": "Sports",
+    "other": "Other"
+  }
+}

@@ -2,7 +2,7 @@
   "login": {
     "title": "Bon Retour",
     "subtitle": "Connectez-vous au portail Lost & Found",
-    "university": "Lost & Found- Ted-Université",
+    "university": "Lost & Found - Ted-Université",
     "email": {
       "label": "Adresse Email",
       "placeholder": "votreprenom@ted-university.com"
@@ -68,7 +68,7 @@
       "emailRequired": "L'email est requis",
       "emailInvalid": "Vous devez utiliser votre email étudiant Ted-Université (@ted-university.com)",
       "passwordRequired": "Le mot de passe est requis",
-      "passwordLength": "Le mot de passe doit comporter au moins 6 caractères",
+      "passwordLength": "Le mot de passe doit comporter au moins 8 caractères",
       "confirmPasswordRequired": "Veuillez confirmer votre mot de passe",
       "passwordMismatch": "Les mots de passe ne correspondent pas",
       "termsRequired": "Vous devez accepter les conditions",
@@ -139,8 +139,53 @@
     },
     "footer": "Ted-Université — ISP — Université par Clevory"
   },
-  "common": { "loading": "Chargement...", "language": "Langue" },
   "account": {
+    "ban": {
+      "titleTemporary": "Vous êtes banni jusqu'au {date}",
+      "titleLifetime": "Vous êtes banni définitivement",
+      "message": "Votre compte a été restreint. Vous ne pouvez pas publier d'annonces pendant cette période."
+    },
+    "announcements": {
+      "title": "Mes Annonces",
+      "tabs": {
+        "pending": "En attente",
+        "active": "Actives",
+        "history": "Historique"
+      },
+      "confirm": {
+        "cancelBtn": "Retour",
+        "okBtn": "Oui, confirmer",
+        "cancel": {
+          "title": "Annuler l'annonce ?",
+          "description": "Cela supprimera votre annonce. Cette action est irréversible."
+        },
+        "confirm": {
+          "title": "Marquer comme résolu ?",
+          "description": "Cela marquera votre objet comme trouvé et le retirera du fil public."
+        },
+        "close": {
+          "title": "Fermer sans correspondance ?",
+          "description": "Cela annulera votre annonce sans confirmer de correspondance."
+        }
+      },
+      "statuses": {
+        "pending": "En attente",
+        "accepted": "Active",
+        "rejected": "Rejetée",
+        "cancelled": "Annulée",
+        "confirmed": "Résolue"
+      },
+      "actions": {
+        "cancel": "Annuler",
+        "confirmFound": "J'ai trouvé la personne",
+        "closeNotFound": "Fermer sans correspondance"
+      },
+      "empty": {
+        "pending": "Aucune annonce en attente.",
+        "active": "Aucune annonce active.",
+        "history": "Aucun historique pour l'instant."
+      }
+    },
     "logout": "Se déconnecter",
     "loggingOut": "Déconnexion...",
     "eyebrow": "Ted-Université Lost & Found",
@@ -151,13 +196,11 @@
     "submit": "Enregistrer",
     "submitting": "Enregistrement...",
     "success": "Votre profil a été mis à jour avec succès.",
-
     "auth": {
       "title": "Connexion Requise",
       "description": "Vous devez être connecté pour accéder à votre page de compte.",
       "cta": "Se Connecter"
     },
-
     "avatar": {
       "change": "Changer la photo de profil",
       "alt": "Photo de profil",
@@ -165,13 +208,11 @@
       "namePlaceholder": "Votre Nom",
       "emailPlaceholder": "votre email"
     },
-
     "sections": {
       "personal": "Informations Personnelles",
       "academic": "Détails Académiques",
       "password": "Changer le Mot de Passe"
     },
-
     "fields": {
       "firstName": {
         "label": "Prénom",
@@ -210,8 +251,112 @@
       "lastNameRequired": "Le nom de famille est requis",
       "emailRequired": "L'email est requis",
       "emailInvalid": "Veuillez entrer un email Ted-Université valide (@ted-university.com)",
-      "passwordLength": "Le nouveau mot de passe doit comporter au moins 6 caractères",
+      "passwordLength": "Le nouveau mot de passe doit comporter au moins 8 caractères",
       "serverError": "Une erreur s'est produite. Veuillez réessayer plus tard."
     }
-  }
+  },
+  "announcements": {
+    "eyebrow": "Ted-Université Lost & Found",
+    "title": "Annonces",
+    "subtitle": "Consultez les signalements d'objets perdus et trouvés sur le campus.",
+    "auth": {
+      "title": "Connexion Requise",
+      "description": "Vous devez être connecté pour consulter et publier des annonces.",
+      "cta": "Se Connecter"
+    },
+    "search": {
+      "placeholder": "Rechercher des annonces..."
+    },
+    "types": {
+      "lost": "Perdu",
+      "found": "Trouvé"
+    },
+    "filters": {
+      "type": "Filtrer par Type",
+      "all": "Tout",
+      "lost": "Perdu",
+      "found": "Trouvé",
+      "category": "Filtrer par Catégorie",
+      "allCategories": "Toutes les Catégories"
+    },
+    "categories": {
+      "electronics": "Électronique",
+      "clothing": "Vêtements",
+      "bags": "Sacs",
+      "keys": "Clés",
+      "documents": "Documents",
+      "jewelry": "Bijoux",
+      "books": "Livres",
+      "sports": "Sports",
+      "other": "Autre"
+    },
+    "compose": {
+      "prompt": "Partagez un objet perdu ou trouvé...",
+      "promptLost": "J'ai perdu quelque chose...",
+      "promptFound": "J'ai trouvé quelque chose...",
+      "guidedPrompt": "Avez-vous perdu ou trouvé quelque chose ?",
+      "guidedActive": "[[name]], ceci est une annonce de type [[type]]",
+      "signInToPost": "Se connecter pour publier une annonce",
+      "typeLost": "J'ai perdu",
+      "typeFound": "J'ai trouvé",
+      "description": {
+        "label": "Description",
+        "placeholderLost": "Décrivez l'objet perdu — couleur, marque, où vous l'avez eu en dernier...",
+        "placeholderFound": "Décrivez l'objet trouvé — où et quand vous l'avez trouvé..."
+      },
+      "category": {
+        "label": "Catégorie",
+        "placeholder": "Sélectionnez une catégorie"
+      },
+      "image": {
+        "label": "Photo de l'objet",
+        "click": "Cliquez pour télécharger",
+        "or": "ou glisser-déposer",
+        "hint": "JPG, PNG ou WEBP · max 5 Mo"
+      },
+      "contact": {
+        "label": "Coordonnées (au moins une requise)",
+        "facebook": "Nom d'utilisateur Facebook",
+        "instagram": "Nom d'utilisateur Instagram",
+        "phone": "Numéro de téléphone",
+        "email": "Adresse e-mail"
+      },
+      "footerHint": "Au moins un moyen de contact est requis.",
+      "cancel": "Annuler",
+      "submit": "Publier",
+      "submitting": "Publication..."
+    },
+    "post": {
+      "imageAlt": "Photo de l'objet"
+    },
+    "empty": {
+      "title": "Aucune annonce pour l'instant",
+      "description": "Soyez le premier à publier un objet perdu ou trouvé."
+    },
+    "success": "Votre annonce a été publiée !",
+    "pendingApproval": "Votre annonce a bien été soumise ! Veuillez patienter, un administrateur va l'approuver dans les plus brefs délais.",
+    "confirm": {
+      "title": "Confirmez votre annonce",
+      "description": "Veuillez vérifier votre annonce avant de la publier. Vous ne pourrez plus la modifier après soumission.",
+      "type": "Type",
+      "category": "Catégorie",
+      "description_label": "Description",
+      "contact": "Contact",
+      "image": "Photo",
+      "imageAttached": "[[count]] photo(s) jointe(s)",
+      "cancel": "Modifier",
+      "submit": "Confirmer et publier"
+    },
+    "errors": {
+      "descriptionRequired": "Veuillez ajouter une description.",
+      "descriptionMinLength": "La description doit contenir au moins 10 caractères.",
+      "categoryRequired": "Veuillez sélectionner une catégorie.",
+      "imageRequired": "Veuillez télécharger une photo de l'objet.",
+      "contactRequired": "Veuillez fournir au moins un moyen de contact.",
+      "contactEmailInvalid": "L'email de contact doit être une adresse email valide.",
+      "usernameInvalid": "Veuillez entrer uniquement un nom d'utilisateur, pas une URL complète.",
+      "serverError": "Une erreur s'est produite. Veuillez réessayer plus tard."
+    }
+  },
+  "common": { "loading": "Chargement...", "language": "Langue" }
 }
