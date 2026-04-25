@@ -22,7 +22,8 @@
       "banned": "Utilisateurs bannis",
       "totalAnnouncements": "Total des annonces",
       "returned": "Objets rendus",
-      "active": "Objets actifs"
+      "active": "Objets actifs",
+      "cancelled": "Annulées"
     },
     "recentActivity": "Activité récente",
     "noActivity": "Aucune activité récente",
@@ -38,7 +39,10 @@
       "all": "Toutes",
       "pending": "En attente",
       "accepted": "Acceptées",
-      "rejected": "Rejetées"
+      "rejected": "Rejetées",
+      "closedWithoutMatch": "Fermé (sans correspondance)",
+      "confirmed": "Confirmée",
+      "cancelled": "Annulées"
     },
     "table": {
       "author": "Auteur",
@@ -46,7 +50,8 @@
       "category": "Catégorie",
       "status": "Statut",
       "date": "Date",
-      "actions": "Actions"
+      "actions": "Actions",
+      "details": "Détails"
     },
     "types": {
       "lost": "Perdu",
@@ -57,7 +62,9 @@
       "accepted": "Acceptée",
       "rejected": "Rejetée",
       "cancelled": "Annulée",
-      "confirmed": "Confirmée"
+      "confirmed": "Confirmée",
+      "closedWithoutMatch": "Fermé",
+      "returned": "Rendu"
     },
     "actions": {
       "accept": "Accepter",
@@ -65,7 +72,9 @@
       "delete": "Supprimer",
       "view": "Voir",
       "markReturned": "Marquer rendu",
-      "markActive": "Marquer actif"
+      "markActive": "Marquer actif",
+      "forceReject": "Forcer le rejet",
+      "closeWithoutMatch": "Fermer (sans correspondance)"
     },
     "modal": {
       "descriptionLabel": "Description",
@@ -85,7 +94,16 @@
       "confirmUnreturnTitle": "Marquer comme actif",
       "confirmUnreturnMessage": "Restaurer cette annonce dans le fil actif ?",
       "confirm": "Confirmer",
-      "cancel": "Annuler"
+      "cancel": "Annuler",
+      "cancelledNotice": "Cette annonce a été annulée par l'utilisateur et est verrouillée définitivement.",
+      "confirmedNotice": "L'utilisateur a confirmé que cet objet a été retrouvé. L'annonce est verrouillée définitivement.",
+      "closedWithoutMatchNotice": "L'utilisateur a fermé cette annonce sans correspondance. Elle est verrouillée définitivement.",
+      "imagesDeleted": "Les images ont été supprimées car cette annonce a été rejetée ou annulée.",
+      "confirmForceRejectTitle": "Forcer le rejet de l'annonce",
+      "confirmForceRejectMessage": "Cela rejettera une annonce acceptée et supprimera définitivement ses images.",
+      "imageLoadError": "Les images n'ont pas pu être chargées — elles ont été supprimées lors du rejet ou de l'annulation de cette annonce.",
+      "confirmCloseWithoutMatchTitle": "Fermer sans correspondance",
+      "confirmCloseWithoutMatchMessage": "Cette action fermera définitivement l'annonce sans correspondance trouvée. Elle sera retirée du fil public et verrouillée définitivement."
     },
     "empty": "Aucune annonce trouvée",
     "loadMore": "Charger plus"
@@ -140,17 +158,31 @@
       "banReasonLabel": "Raison du bannissement",
       "banReasonPlaceholder": "Indiquez une raison claire (min. 5 caractères)...",
       "banReasonHint": "Cette raison est enregistrée dans le journal d'audit.",
+      "banPreviewPermanent": "⚠ Ce bannissement est permanent et sans date d'expiration.",
+      "banPreviewTimed": "Le bannissement expirera automatiquement le {date}.",
+      "banSubmitPermanent": "Bannir définitivement",
+      "banSubmitTimed": "Appliquer le bannissement",
       "unbanTitle": "Débannir l'utilisateur",
       "unbanConfirm": "Êtes-vous sûr de vouloir débannir cet utilisateur ?",
       "confirm": "Confirmer",
-      "cancel": "Annuler"
+      "cancel": "Annuler",
+      "detailTitle": "Détails de l'entrée",
+      "adminSection": "Administrateur",
+      "adminEmail": "Email",
+      "adminRole": "Rôle",
+      "targetSection": "Cible",
+      "targetType": "Type de cible",
+      "metaSection": "Données supplémentaires",
+      "rawAction": "Code action"
     },
     "announcements": {
       "title": "Annonces de",
       "empty": "Aucune annonce trouvée pour cet utilisateur"
     },
     "empty": "Aucun utilisateur trouvé",
-    "banReason": "Raison"
+    "banReason": "Raison",
+    "banExpires": "Expire le",
+    "banPermanent": "Bannissement permanent"
   },
   "logs": {
     "title": "Journaux d'audit",
@@ -168,7 +200,8 @@
       "action": "Action",
       "target": "Cible",
       "ip": "IP",
-      "date": "Date"
+      "date": "Date",
+      "details": "Détails"
     },
     "summary": {
       "title": "Résumé d'activité",
@@ -176,17 +209,29 @@
       "period": "Période"
     },
     "empty": "Aucun journal trouvé",
+    "modal": {
+      "detailTitle": "Détails de l'entrée",
+      "adminSection": "Administrateur",
+      "adminEmail": "Email",
+      "adminRole": "Rôle",
+      "targetSection": "Cible",
+      "targetType": "Type de cible",
+      "metaSection": "Données supplémentaires",
+      "rawAction": "Code action"
+    },
     "actions": {
       "ANNOUNCEMENT_ACCEPTED": "Annonce acceptée",
       "ANNOUNCEMENT_REJECTED": "Annonce rejetée",
       "ANNOUNCEMENT_DELETED": "Annonce supprimée",
       "ANNOUNCEMENT_MARK_RETURNED_TOGGLED": "Statut de retour modifié",
+      "ANNOUNCEMENT_CLOSED_WITHOUT_MATCH": "Annonce fermée sans correspondance",
       "USER_BANNED": "Utilisateur banni",
       "USER_UNBANNED": "Utilisateur débanni",
       "USER_HISTORY_VIEWED": "Historique consulté",
       "ADMIN_LOGIN": "Connexion admin",
       "ADMIN_LOGOUT": "Déconnexion admin",
-      "ADMIN_REFRESH": "Token actualisé"
+      "ADMIN_REFRESH": "Token actualisé",
+      "ANNOUNCEMENT_REACTIVATED": "Annonce réactivée"
     }
   },
   "common": {

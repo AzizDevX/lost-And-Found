@@ -3,19 +3,10 @@ import { createAdminLog } from "../../utils/adminLogger.js";
 import { notifyStatsUpdate } from "../announcement/announcement.js";
 import { deleteAnnouncementImages } from "../../utils/imageCleanup.js";
 
-// ─── Shared helper ────────────────────────────────────────────────────────────
-
-/**
- * Priority order (highest → lowest):
- *   cancelled  — user withdrew PENDING request (images deleted, read-only)
- *   confirmed  — user found item (images kept, read-only)
- *   closed     — user gave up on ACCEPTED post (images kept, admin CAN reactivate)
- *   pending | accepted | rejected — standard review states
- */
 function deriveDisplayStatus(a) {
   if (a.cancelledByUser) return "cancelled";
   if (a.userConfirmed) return "confirmed";
-  if (a.closedByUser) return "closed";
+  if (a.closedWithoutMatch) return "closedWithoutMatch";
   return a.status;
 }
 
@@ -32,24 +23,22 @@ export async function adminListAnnouncements(req, res) {
     const filter = {};
 
     if (status === "all") {
-      // no filter — admin sees everything
     } else if (status === "cancelled") {
       filter.cancelledByUser = true;
     } else if (status === "confirmed") {
       filter.userConfirmed = true;
-    } else if (status === "closed") {
-      filter.closedByUser = true;
+    } else if (status === "closedWithoutMatch") {
+      filter.closedWithoutMatch = true;
     } else if (["pending", "accepted", "rejected"].includes(status)) {
       filter.status = status;
       filter.cancelledByUser = false;
       filter.userConfirmed = false;
-      filter.closedByUser = false;
+      filter.closedWithoutMatch = false;
     } else {
-      // Default: pending review queue
       filter.status = "pending";
       filter.cancelledByUser = false;
       filter.userConfirmed = false;
-      filter.closedByUser = false;
+      filter.closedWithoutMatch = false;
     }
 
     if (type && ["lost", "found"].includes(type)) filter.type = type;
@@ -79,36 +68,35 @@ export async function adminListAnnouncements(req, res) {
       Announcement.countDocuments(filter),
     ]);
 
-    // Summary counts for dashboard tabs
     const [
       pendingCount,
       acceptedCount,
       rejectedCount,
       cancelledCount,
       confirmedCount,
-      closedCount,
+      closedWithoutMatchCount,
     ] = await Promise.all([
       Announcement.countDocuments({
         status: "pending",
         cancelledByUser: false,
         userConfirmed: false,
-        closedByUser: false,
+        closedWithoutMatch: false,
       }),
       Announcement.countDocuments({
         status: "accepted",
         cancelledByUser: false,
         userConfirmed: false,
-        closedByUser: false,
+        closedWithoutMatch: false,
       }),
       Announcement.countDocuments({
         status: "rejected",
         cancelledByUser: false,
         userConfirmed: false,
-        closedByUser: false,
+        closedWithoutMatch: false,
       }),
       Announcement.countDocuments({ cancelledByUser: true }),
       Announcement.countDocuments({ userConfirmed: true }),
-      Announcement.countDocuments({ closedByUser: true }),
+      Announcement.countDocuments({ closedWithoutMatch: true }),
     ]);
 
     return res.status(200).json({
@@ -129,18 +117,16 @@ export async function adminListAnnouncements(req, res) {
         rejected: rejectedCount,
         cancelled: cancelledCount,
         confirmed: confirmedCount,
-        closed: closedCount,
+        closedWithoutMatch: closedWithoutMatchCount,
       },
     });
   } catch (err) {
     console.error("adminListAnnouncements Error:", err);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        error: "INTERNAL_SERVER_ERROR",
-        message: "An unexpected error occurred.",
-      });
+    return res.status(500).json({
+      success: false,
+      error: "INTERNAL_SERVER_ERROR",
+      message: "An unexpected error occurred.",
+    });
   }
 }
 
@@ -157,13 +143,11 @@ export async function adminGetAnnouncement(req, res) {
       .lean();
 
     if (!announcement) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: "NOT_FOUND",
-          message: "Announcement not found.",
-        });
+      return res.status(404).json({
+        success: false,
+        error: "NOT_FOUND",
+        message: "Announcement not found.",
+      });
     }
 
     return res.status(200).json({
@@ -175,37 +159,16 @@ export async function adminGetAnnouncement(req, res) {
     });
   } catch (err) {
     console.error("adminGetAnnouncement Error:", err);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        error: "INTERNAL_SERVER_ERROR",
-        message: "An unexpected error occurred.",
-      });
+    return res.status(500).json({
+      success: false,
+      error: "INTERNAL_SERVER_ERROR",
+      message: "An unexpected error occurred.",
+    });
   }
 }
 
 // ─── PATCH /api/admin/announcements/:id/review ───────────────────────────────
-/**
- * Accept or reject an announcement.
- *
- * Allowed transitions:
- *   pending  → accepted ✓
- *   pending  → rejected ✓
- *   accepted → rejected ✓  (force-reject: removes from feed, deletes images)
- *   rejected → accepted ✓  (reverse a mistaken rejection)
- *   rejected → rejected ✓  (update rejection reason)
- *   accepted → accepted ✓  (no-op but harmless)
- *
- * NOT allowed:
- *   cancelled → anything  ✗  (user withdrew pending — read-only)
- *   confirmed → anything  ✗  (user resolved — read-only)
- *   closed    → anything  ✗  (use /reactivate to restore a closed post)
- *
- * Image policy:
- *   → rejected: images deleted (announcement leaves all feeds permanently).
- *   → accepted: images KEPT (displayed on public feed).
- */
+
 export async function adminReviewAnnouncement(req, res) {
   try {
     const { id } = req.params;
@@ -213,13 +176,11 @@ export async function adminReviewAnnouncement(req, res) {
 
     const announcement = await Announcement.findById(id);
     if (!announcement) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: "NOT_FOUND",
-          message: "Announcement not found.",
-        });
+      return res.status(404).json({
+        success: false,
+        error: "NOT_FOUND",
+        message: "Announcement not found.",
+      });
     }
 
     if (announcement.cancelledByUser) {
@@ -240,16 +201,26 @@ export async function adminReviewAnnouncement(req, res) {
       });
     }
 
-    if (announcement.closedByUser) {
+    if (announcement.closedWithoutMatch) {
       return res.status(400).json({
         success: false,
-        error: "ANNOUNCEMENT_CLOSED",
+        error: "ANNOUNCEMENT_CLOSED_WITHOUT_MATCH",
         message:
-          "This announcement was closed by the user (no match found). Use PATCH /reactivate to restore it to active, or delete it.",
+          "This announcement was closed by the user (no match found). It is permanently locked — you can only view or delete it.",
+      });
+    }
+
+    if (announcement.status === "rejected" && status === "accepted") {
+      return res.status(400).json({
+        success: false,
+        error: "REVERSAL_NOT_ALLOWED",
+        message:
+          "A rejected announcement cannot be directly accepted. The user must resubmit it for review.",
       });
     }
 
     const previousStatus = announcement.status;
+    const previousImages = [...announcement.images];
 
     announcement.status = status;
     announcement.reviewedBy = req.admin.id;
@@ -258,14 +229,15 @@ export async function adminReviewAnnouncement(req, res) {
     if (status === "rejected") {
       announcement.rejectionReason = rejectionReason ?? null;
       announcement.isReturned = false;
+      announcement.images = [];
     } else {
       announcement.rejectionReason = null;
     }
 
     await announcement.save();
 
-    if (status === "rejected") {
-      deleteAnnouncementImages(announcement.images);
+    if (status === "rejected" && previousImages.length > 0) {
+      deleteAnnouncementImages(previousImages);
     }
 
     await createAdminLog(req, {
@@ -296,100 +268,16 @@ export async function adminReviewAnnouncement(req, res) {
     });
   } catch (err) {
     console.error("adminReviewAnnouncement Error:", err);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        error: "INTERNAL_SERVER_ERROR",
-        message: "An unexpected error occurred.",
-      });
-  }
-}
-
-// ─── PATCH /api/admin/announcements/:id/reactivate ───────────────────────────
-/**
- * Admin restores a CLOSED announcement back to accepted (active on feed).
- *
- * Only allowed on: closedByUser = true, status = "accepted" announcements.
- * (Cancelled and confirmed are permanently read-only for admin.)
- *
- * This is the key difference between "closed" and "cancelled"/"confirmed":
- *   - closed    → admin CAN reactivate  ✓
- *   - cancelled → admin CANNOT          ✗
- *   - confirmed → admin CANNOT          ✗
- *
- * Images are already kept when a user closes, so nothing needs to be restored.
- */
-export async function adminReactivateAnnouncement(req, res) {
-  try {
-    const { id } = req.params;
-
-    const announcement = await Announcement.findById(id);
-    if (!announcement) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: "NOT_FOUND",
-          message: "Announcement not found.",
-        });
-    }
-
-    if (!announcement.closedByUser) {
-      const reason = announcement.cancelledByUser
-        ? "cancelled (user withdrew their pending request — permanently read-only)"
-        : announcement.userConfirmed
-          ? "confirmed resolved by the user — permanently read-only"
-          : "not closed by the user — nothing to reactivate";
-
-      return res.status(400).json({
-        success: false,
-        error: "INVALID_STATE",
-        message: `This announcement cannot be reactivated: it is ${reason}.`,
-      });
-    }
-
-    // Restore to active feed
-    announcement.closedByUser = false;
-    announcement.closedAt = null;
-    announcement.closedReason = null;
-    // status stays "accepted" (it was accepted before user closed it)
-    await announcement.save();
-
-    await createAdminLog(req, {
-      action: "ANNOUNCEMENT_REACTIVATED",
-      targetType: "Announcement",
-      targetId: announcement._id,
-      targetLabel: announcement.description.slice(0, 100),
-      meta: { reactivatedFrom: "closed" },
+    return res.status(500).json({
+      success: false,
+      error: "INTERNAL_SERVER_ERROR",
+      message: "An unexpected error occurred.",
     });
-
-    notifyStatsUpdate();
-
-    return res.status(200).json({
-      success: true,
-      message:
-        "Announcement reactivated. It is now visible on the public feed again.",
-      data: { id: announcement._id, displayStatus: "accepted" },
-    });
-  } catch (err) {
-    console.error("adminReactivateAnnouncement Error:", err);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        error: "INTERNAL_SERVER_ERROR",
-        message: "An unexpected error occurred.",
-      });
   }
 }
 
 // ─── PATCH /api/admin/announcements/:id/returned ─────────────────────────────
-/**
- * Toggle "item physically returned" flag.
- * Only on accepted, non-cancelled, non-closed announcements.
- * Images KEPT.
- */
+
 export async function adminMarkReturned(req, res) {
   try {
     const { id } = req.params;
@@ -397,47 +285,57 @@ export async function adminMarkReturned(req, res) {
 
     const announcement = await Announcement.findById(id);
     if (!announcement) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: "NOT_FOUND",
-          message: "Announcement not found.",
-        });
+      return res.status(404).json({
+        success: false,
+        error: "NOT_FOUND",
+        message: "Announcement not found.",
+      });
     }
 
     if (announcement.cancelledByUser) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "ANNOUNCEMENT_CANCELLED",
-          message: "Cannot update a cancelled announcement.",
-        });
+      return res.status(400).json({
+        success: false,
+        error: "ANNOUNCEMENT_CANCELLED",
+        message: "Cannot update a cancelled announcement.",
+      });
     }
 
-    if (announcement.closedByUser) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "ANNOUNCEMENT_CLOSED",
-          message: "Cannot update a closed announcement. Reactivate it first.",
-        });
+    if (announcement.closedWithoutMatch) {
+      return res.status(400).json({
+        success: false,
+        error: "ANNOUNCEMENT_CLOSED_WITHOUT_MATCH",
+        message:
+          "Cannot update an announcement closed without a match. It is permanently locked.",
+      });
+    }
+
+    if (announcement.userConfirmed) {
+      return res.status(400).json({
+        success: false,
+        error: "ANNOUNCEMENT_CONFIRMED",
+        message: "Cannot update a confirmed announcement.",
+      });
     }
 
     if (announcement.status !== "accepted") {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          error: "INVALID_STATUS",
-          message: "Only accepted announcements can be marked as returned.",
-        });
+      return res.status(400).json({
+        success: false,
+        error: "INVALID_STATUS",
+        message: "Only accepted announcements can be marked as returned.",
+      });
     }
 
     const previous = announcement.isReturned;
     announcement.isReturned = isReturned;
+
+    if (isReturned) {
+      announcement.userConfirmed = true;
+      announcement.userConfirmedAt = new Date();
+    } else {
+      announcement.userConfirmed = false;
+      announcement.userConfirmedAt = null;
+    }
+
     await announcement.save();
 
     await createAdminLog(req, {
@@ -457,37 +355,104 @@ export async function adminMarkReturned(req, res) {
     });
   } catch (err) {
     console.error("adminMarkReturned Error:", err);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        error: "INTERNAL_SERVER_ERROR",
-        message: "An unexpected error occurred.",
-      });
+    return res.status(500).json({
+      success: false,
+      error: "INTERNAL_SERVER_ERROR",
+      message: "An unexpected error occurred.",
+    });
   }
 }
 
-// ─── DELETE /api/admin/announcements/:id ─────────────────────────────────────
-/**
- * Hard delete — any admin can delete any announcement regardless of status.
- * Always deletes images from disk.
- *
- * This is the nuclear option — use it to permanently remove spam, illegal
- * content, or any announcement that should not exist at all.
- */
+// ─── PATCH /api/admin/announcements/:id/admin-close ─────────────────────────
+
+export async function adminCloseWithoutMatch(req, res) {
+  try {
+    const { id } = req.params;
+
+    const announcement = await Announcement.findById(id);
+    if (!announcement) {
+      return res.status(404).json({
+        success: false,
+        error: "NOT_FOUND",
+        message: "Announcement not found.",
+      });
+    }
+
+    if (announcement.cancelledByUser) {
+      return res.status(400).json({
+        success: false,
+        error: "ANNOUNCEMENT_CANCELLED",
+        message: "Cannot close a cancelled announcement.",
+      });
+    }
+
+    if (announcement.userConfirmed) {
+      return res.status(400).json({
+        success: false,
+        error: "ANNOUNCEMENT_CONFIRMED",
+        message: "Cannot close a confirmed announcement.",
+      });
+    }
+
+    if (announcement.closedWithoutMatch) {
+      return res.status(400).json({
+        success: false,
+        error: "ALREADY_CLOSED",
+        message: "This announcement is already closed without a match.",
+      });
+    }
+
+    if (announcement.status !== "accepted") {
+      return res.status(400).json({
+        success: false,
+        error: "INVALID_STATUS",
+        message: "Only accepted announcements can be closed without a match.",
+      });
+    }
+
+    announcement.closedWithoutMatch = true;
+    announcement.closedWithoutMatchAt = new Date();
+    await announcement.save();
+
+    await createAdminLog(req, {
+      action: "ANNOUNCEMENT_CLOSED_WITHOUT_MATCH",
+      targetType: "Announcement",
+      targetId: announcement._id,
+      targetLabel: announcement.description.slice(0, 100),
+      meta: { previousStatus: announcement.status },
+    });
+
+    notifyStatsUpdate();
+
+    return res.status(200).json({
+      success: true,
+      message: "Announcement closed without match.",
+      data: {
+        id: announcement._id,
+        displayStatus: "closedWithoutMatch",
+      },
+    });
+  } catch (err) {
+    console.error("adminCloseWithoutMatch Error:", err);
+    return res.status(500).json({
+      success: false,
+      error: "INTERNAL_SERVER_ERROR",
+      message: "An unexpected error occurred.",
+    });
+  }
+}
+
 export async function adminDeleteAnnouncement(req, res) {
   try {
     const { id } = req.params;
 
     const announcement = await Announcement.findById(id);
     if (!announcement) {
-      return res
-        .status(404)
-        .json({
-          success: false,
-          error: "NOT_FOUND",
-          message: "Announcement not found.",
-        });
+      return res.status(404).json({
+        success: false,
+        error: "NOT_FOUND",
+        message: "Announcement not found.",
+      });
     }
 
     const snapshot = {
@@ -500,7 +465,6 @@ export async function adminDeleteAnnouncement(req, res) {
       imageCount: announcement.images.length,
     };
 
-    // Always delete images on hard delete
     deleteAnnouncementImages(announcement.images);
 
     await announcement.deleteOne();
@@ -520,12 +484,10 @@ export async function adminDeleteAnnouncement(req, res) {
       .json({ success: true, message: "Announcement deleted successfully." });
   } catch (err) {
     console.error("adminDeleteAnnouncement Error:", err);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        error: "INTERNAL_SERVER_ERROR",
-        message: "An unexpected error occurred.",
-      });
+    return res.status(500).json({
+      success: false,
+      error: "INTERNAL_SERVER_ERROR",
+      message: "An unexpected error occurred.",
+    });
   }
 }

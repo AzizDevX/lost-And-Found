@@ -22,7 +22,8 @@
       "banned": "Banned Users",
       "totalAnnouncements": "Total Announcements",
       "returned": "Items Returned",
-      "active": "Active Items"
+      "active": "Active Items",
+      "cancelled": "Cancelled"
     },
     "recentActivity": "Recent Activity",
     "noActivity": "No recent activity",
@@ -38,7 +39,10 @@
       "all": "All",
       "pending": "Pending",
       "accepted": "Accepted",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "closedWithoutMatch": "Closed (No Match)",
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled"
     },
     "table": {
       "author": "Author",
@@ -46,7 +50,8 @@
       "category": "Category",
       "status": "Status",
       "date": "Date",
-      "actions": "Actions"
+      "actions": "Actions",
+      "details": "Details"
     },
     "types": {
       "lost": "Lost",
@@ -57,7 +62,9 @@
       "accepted": "Accepted",
       "rejected": "Rejected",
       "cancelled": "Cancelled",
-      "confirmed": "Confirmed"
+      "confirmed": "Confirmed",
+      "closedWithoutMatch": "Closed (No Match)",
+      "returned": "Returned"
     },
     "actions": {
       "accept": "Accept",
@@ -65,7 +72,9 @@
       "delete": "Delete",
       "view": "View",
       "markReturned": "Mark Returned",
-      "markActive": "Mark Active"
+      "markActive": "Mark Active",
+      "forceReject": "Force Reject",
+      "closeWithoutMatch": "Close (No Match)"
     },
     "modal": {
       "descriptionLabel": "Description",
@@ -85,7 +94,24 @@
       "confirmUnreturnTitle": "Mark as Active",
       "confirmUnreturnMessage": "Restore this announcement to the active feed?",
       "confirm": "Confirm",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "cancelledNotice": "This announcement was cancelled by the user and is permanently locked.",
+      "confirmedNotice": "The user confirmed this item was found. This announcement is permanently locked.",
+      "closedWithoutMatchNotice": "The user closed this announcement without finding a match. It is permanently locked.",
+      "imagesDeleted": "Images were deleted because this announcement was rejected or cancelled.",
+      "confirmForceRejectTitle": "Force Reject Announcement",
+      "confirmForceRejectMessage": "This will reject an accepted announcement and permanently delete its images.",
+      "detailTitle": "Log Entry Details",
+      "adminSection": "Admin",
+      "adminEmail": "Email",
+      "adminRole": "Role",
+      "targetSection": "Target",
+      "targetType": "Target Type",
+      "metaSection": "Additional Data",
+      "rawAction": "Action Code",
+      "imageLoadError": "Images could not be loaded — they were deleted when this announcement was rejected or cancelled.",
+      "confirmCloseWithoutMatchTitle": "Close Without Match",
+      "confirmCloseWithoutMatchMessage": "This will permanently close the announcement with no match found. It will be removed from the public feed and locked. This cannot be undone."
     },
     "empty": "No announcements found",
     "loadMore": "Load more"
@@ -140,6 +166,10 @@
       "banReasonLabel": "Ban reason",
       "banReasonPlaceholder": "State a clear reason (min. 5 characters)...",
       "banReasonHint": "This reason is stored in the audit log.",
+      "banPreviewPermanent": "⚠ This ban has no expiry — it is permanent.",
+      "banPreviewTimed": "Ban will automatically expire on {date}.",
+      "banSubmitPermanent": "Ban permanently",
+      "banSubmitTimed": "Apply ban",
       "unbanTitle": "Unban User",
       "unbanConfirm": "Are you sure you want to unban this user?",
       "confirm": "Confirm",
@@ -150,7 +180,9 @@
       "empty": "No announcements found for this user"
     },
     "empty": "No users found",
-    "banReason": "Reason"
+    "banReason": "Reason",
+    "banExpires": "Expires",
+    "banPermanent": "Permanent ban"
   },
   "logs": {
     "title": "Audit Logs",
@@ -168,7 +200,8 @@
       "action": "Action",
       "target": "Target",
       "ip": "IP",
-      "date": "Date"
+      "date": "Date",
+      "details": "Details"
     },
     "summary": {
       "title": "Activity Summary",
@@ -176,17 +209,29 @@
       "period": "Period"
     },
     "empty": "No logs found",
+    "modal": {
+      "detailTitle": "Log Entry Details",
+      "adminSection": "Admin",
+      "adminEmail": "Email",
+      "adminRole": "Role",
+      "targetSection": "Target",
+      "targetType": "Target Type",
+      "metaSection": "Additional Data",
+      "rawAction": "Action Code"
+    },
     "actions": {
       "ANNOUNCEMENT_ACCEPTED": "Announcement accepted",
       "ANNOUNCEMENT_REJECTED": "Announcement rejected",
       "ANNOUNCEMENT_DELETED": "Announcement deleted",
       "ANNOUNCEMENT_MARK_RETURNED_TOGGLED": "Returned status toggled",
+      "ANNOUNCEMENT_CLOSED_WITHOUT_MATCH": "Announcement closed without match",
       "USER_BANNED": "User banned",
       "USER_UNBANNED": "User unbanned",
       "USER_HISTORY_VIEWED": "User history viewed",
       "ADMIN_LOGIN": "Admin login",
       "ADMIN_LOGOUT": "Admin logout",
-      "ADMIN_REFRESH": "Token refreshed"
+      "ADMIN_REFRESH": "Token refreshed",
+      "ANNOUNCEMENT_REACTIVATED": "Announcement reactivated"
     }
   },
   "common": {

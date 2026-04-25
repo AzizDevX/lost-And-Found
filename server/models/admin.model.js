@@ -39,14 +39,13 @@ const adminSchema = new mongoose.Schema(
     },
 
     createdBy: {
-      type: String, // CLI username or "system"
+      type: String,
       default: "system",
     },
   },
   { timestamps: true },
 );
 
-const Admin =
-  mongoose.models.Admin || mongoose.model("Admin", adminSchema);
+const Admin = mongoose.models.Admin || mongoose.model("Admin", adminSchema);
 
 export default Admin;

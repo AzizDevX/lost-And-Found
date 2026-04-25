@@ -1928,3 +1928,141 @@
   color: var(--accent);
   font-weight: 600;
 }
+/* ── Log Detail Modal ─────────────────────────────────────────────────── */
+
+.logDetailHero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.logDetailTime {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.logDetailCard {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.logDetailCardTitle {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.logMetaGrid {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.logMetaRow {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 10px;
+  align-items: baseline;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.025);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.logMetaKey {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  word-break: break-word;
+}
+
+.logMetaValue {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  word-break: break-all;
+  white-space: pre-wrap;
+  font-family: "Courier New", monospace;
+}
+
+.logRawAction {
+  margin-top: 8px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .logMetaRow {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+}
+
+/* Wrap each thumbnail so the error fallback can replace it */
+.detailImageWrap {
+  position: relative;
+  width: 100px;
+  height: 80px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+/* Error state shown when thumbnail fails to load */
+.imgError {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--danger-dim);
+  color: var(--danger);
+  font-size: 10px;
+  text-align: center;
+  padding: 6px;
+  cursor: default;
+}
+
+/* Wrap for full-size image view */
+.detailImageFullWrap {
+  position: relative;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+/* Error state for the full-size view */
+.imgErrorFull {
+  width: 100%;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--danger-dim);
+  border: 1px solid var(--danger-border);
+  border-radius: 10px;
+  color: var(--danger);
+  font-size: 13px;
+  cursor: pointer;
+}

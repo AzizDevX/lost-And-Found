@@ -17,8 +17,6 @@ const loginSchema = Joi.object({
   }),
 });
 
-// ─── Internal: write auth log (doesn't use req.admin — not set at login time) ─
-
 async function writeAuthLog(req, admin, action) {
   try {
     await AdminLog.create({
@@ -59,34 +57,28 @@ export async function adminLogin(req, res) {
     const admin = await Admin.findOne({ email }).select("+password");
 
     if (!admin) {
-      return res
-        .status(401)
-        .json({
-          success: false,
-          error: "INVALID_CREDENTIALS",
-          message: "Invalid email or password.",
-        });
+      return res.status(401).json({
+        success: false,
+        error: "INVALID_CREDENTIALS",
+        message: "Invalid email or password.",
+      });
     }
 
     if (!admin.isActive) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          error: "ACCOUNT_DISABLED",
-          message: "This admin account has been disabled.",
-        });
+      return res.status(403).json({
+        success: false,
+        error: "ACCOUNT_DISABLED",
+        message: "This admin account has been disabled.",
+      });
     }
 
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) {
-      return res
-        .status(401)
-        .json({
-          success: false,
-          error: "INVALID_CREDENTIALS",
-          message: "Invalid email or password.",
-        });
+      return res.status(401).json({
+        success: false,
+        error: "INVALID_CREDENTIALS",
+        message: "Invalid email or password.",
+      });
     }
 
     const accessToken = jwt.sign(
@@ -125,13 +117,11 @@ export async function adminLogin(req, res) {
     });
   } catch (err) {
     console.error("adminLogin Error:", err);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        error: "INTERNAL_SERVER_ERROR",
-        message: "An unexpected error occurred.",
-      });
+    return res.status(500).json({
+      success: false,
+      error: "INTERNAL_SERVER_ERROR",
+      message: "An unexpected error occurred.",
+    });
   }
 }
 
@@ -142,47 +132,39 @@ export async function adminRefresh(req, res) {
     const token = req.cookies?.adminRefreshToken;
 
     if (!token) {
-      return res
-        .status(401)
-        .json({
-          success: false,
-          error: "REFRESH_TOKEN_MISSING",
-          message: "No refresh token provided.",
-        });
+      return res.status(401).json({
+        success: false,
+        error: "REFRESH_TOKEN_MISSING",
+        message: "No refresh token provided.",
+      });
     }
 
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.ADMIN_REFRESH_TOKEN_SECRET);
     } catch {
-      return res
-        .status(401)
-        .json({
-          success: false,
-          error: "REFRESH_TOKEN_INVALID",
-          message: "Refresh token is invalid or expired.",
-        });
+      return res.status(401).json({
+        success: false,
+        error: "REFRESH_TOKEN_INVALID",
+        message: "Refresh token is invalid or expired.",
+      });
     }
 
     if (!decoded.isAdmin) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          error: "FORBIDDEN",
-          message: "Token is not an admin token.",
-        });
+      return res.status(403).json({
+        success: false,
+        error: "FORBIDDEN",
+        message: "Token is not an admin token.",
+      });
     }
 
     const admin = await Admin.findById(decoded.id);
     if (!admin || !admin.isActive) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          error: "ACCOUNT_DISABLED",
-          message: "Admin account not found or disabled.",
-        });
+      return res.status(403).json({
+        success: false,
+        error: "ACCOUNT_DISABLED",
+        message: "Admin account not found or disabled.",
+      });
     }
 
     const newAccessToken = jwt.sign(
@@ -196,20 +178,17 @@ export async function adminRefresh(req, res) {
       .json({ success: true, data: { accessToken: newAccessToken } });
   } catch (err) {
     console.error("adminRefresh Error:", err);
-    return res
-      .status(500)
-      .json({
-        success: false,
-        error: "INTERNAL_SERVER_ERROR",
-        message: "An unexpected error occurred.",
-      });
+    return res.status(500).json({
+      success: false,
+      error: "INTERNAL_SERVER_ERROR",
+      message: "An unexpected error occurred.",
+    });
   }
 }
 
 // ─── Admin Logout ─────────────────────────────────────────────────────────────
 
 export async function adminLogout(req, res) {
-  // Try to log even though req.admin might not be set (middleware not applied to logout)
   try {
     const token = req.cookies?.adminRefreshToken;
     if (token) {

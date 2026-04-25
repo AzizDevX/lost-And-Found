@@ -12,15 +12,26 @@ export async function adminListUsers(req, res) {
     const skip = (pageNum - 1) * limitNum;
 
     const filter = {};
-    if (isBanned === "true") filter.isBanned = true;
+    const now = new Date();
+    if (isBanned === "true") {
+      filter.isBanned = true;
+      filter.$and = [
+        { $or: [{ banExpiresAt: null }, { banExpiresAt: { $gt: now } }] },
+      ];
+    }
     if (isBanned === "false") filter.isBanned = false;
     if (search?.trim()) {
       const s = search.trim();
-      filter.$or = [
+      const searchOr = [
         { firstName: { $regex: s, $options: "i" } },
         { lastName: { $regex: s, $options: "i" } },
         { email: { $regex: s, $options: "i" } },
       ];
+      if (filter.$and) {
+        filter.$and.push({ $or: searchOr });
+      } else {
+        filter.$or = searchOr;
+      }
     }
 
     const [users, total] = await Promise.all([
@@ -33,6 +44,35 @@ export async function adminListUsers(req, res) {
         .lean(),
       userModel.countDocuments(filter),
     ]);
+
+    const expiredIds = users
+      .filter(
+        (u) => u.isBanned && u.banExpiresAt && new Date(u.banExpiresAt) <= now,
+      )
+      .map((u) => u._id);
+    if (expiredIds.length > 0) {
+      userModel
+        .updateMany(
+          { _id: { $in: expiredIds } },
+          {
+            $set: {
+              isBanned: false,
+              banReason: null,
+              bannedBy: null,
+              bannedAt: null,
+              banExpiresAt: null,
+            },
+          },
+        )
+        .catch(() => {});
+      users.forEach((u) => {
+        if (expiredIds.some((id) => id.toString() === u._id.toString())) {
+          u.isBanned = false;
+          u.banReason = null;
+          u.banExpiresAt = null;
+        }
+      });
+    }
 
     const userIds = users.map((u) => u._id);
     const counts = await Announcement.aggregate([
@@ -93,6 +133,25 @@ export async function adminGetUser(req, res) {
         error: "NOT_FOUND",
         message: "User not found.",
       });
+
+    if (
+      user.isBanned &&
+      user.banExpiresAt &&
+      new Date() >= new Date(user.banExpiresAt)
+    ) {
+      await userModel.findByIdAndUpdate(user._id, {
+        $set: {
+          isBanned: false,
+          banReason: null,
+          bannedBy: null,
+          bannedAt: null,
+          banExpiresAt: null,
+        },
+      });
+      user.isBanned = false;
+      user.banReason = null;
+      user.banExpiresAt = null;
+    }
 
     await createAdminLog(req, {
       action: "USER_HISTORY_VIEWED",
@@ -181,15 +240,27 @@ export async function adminGetUserAnnouncements(req, res) {
   }
 }
 
+const ALLOWED_BAN_DAYS = new Set([1, 3, 7, 14, 30, 90]);
+
+async function autoLiftExpiredBan(user) {
+  if (!user.isBanned || !user.banExpiresAt) return false;
+  if (new Date() < new Date(user.banExpiresAt)) return false;
+
+  user.isBanned = false;
+  user.banReason = null;
+  user.bannedBy = null;
+  user.bannedAt = null;
+  user.banExpiresAt = null;
+  await user.save();
+  return true;
+}
+
 // ─── PATCH /api/admin/users/:id/ban ───────────────────────────────────────────
-/**
- * Permanent ban — only lifted by explicit PATCH /unban.
- * Body: { reason: string (5-300 chars) }
- */
+
 export async function adminBanUser(req, res) {
   try {
     const { id } = req.params;
-    const { reason } = req.body;
+    const { reason, durationDays = null } = req.body;
 
     if (!reason || reason.trim().length < 5) {
       return res.status(400).json({
@@ -206,6 +277,17 @@ export async function adminBanUser(req, res) {
       });
     }
 
+    // ── Validate duration ────────────────────────────────────────────────
+    const isPermanent = durationDays === null || durationDays === 0;
+    if (!isPermanent && !ALLOWED_BAN_DAYS.has(Number(durationDays))) {
+      return res.status(400).json({
+        success: false,
+        error: "VALIDATION_ERROR",
+        message:
+          "Invalid ban duration. Allowed values: 1, 3, 7, 14, 30, 90 days, or null for permanent.",
+      });
+    }
+
     const user = await userModel.findById(id);
     if (!user)
       return res.status(404).json({
@@ -213,6 +295,8 @@ export async function adminBanUser(req, res) {
         error: "NOT_FOUND",
         message: "User not found.",
       });
+
+    await autoLiftExpiredBan(user);
 
     if (user.isBanned) {
       return res.status(400).json({
@@ -222,10 +306,17 @@ export async function adminBanUser(req, res) {
       });
     }
 
+    // ── Apply ban ────────────────────────────────────────────────────────
+    const now = new Date();
+    const banExpiresAt = isPermanent
+      ? null
+      : new Date(now.getTime() + Number(durationDays) * 24 * 60 * 60 * 1000);
+
     user.isBanned = true;
     user.banReason = reason.trim();
     user.bannedBy = req.admin.id;
-    user.bannedAt = new Date();
+    user.bannedAt = now;
+    user.banExpiresAt = banExpiresAt;
     await user.save();
 
     await createAdminLog(req, {
@@ -233,13 +324,26 @@ export async function adminBanUser(req, res) {
       targetType: "User",
       targetId: user._id,
       targetLabel: `${user.firstName} ${user.lastName} <${user.email}>`,
-      meta: { reason: reason.trim() },
+      meta: {
+        reason: reason.trim(),
+        durationDays: isPermanent ? null : Number(durationDays),
+        banExpiresAt: banExpiresAt ? banExpiresAt.toISOString() : null,
+        permanent: isPermanent,
+      },
     });
 
     return res.status(200).json({
       success: true,
-      message: "User has been permanently banned.",
-      data: { id: user._id, isBanned: true, banReason: user.banReason },
+      message: isPermanent
+        ? "User has been permanently banned."
+        : `User has been banned for ${durationDays} day(s).`,
+      data: {
+        id: user._id,
+        isBanned: true,
+        banReason: user.banReason,
+        banExpiresAt: user.banExpiresAt,
+        permanent: isPermanent,
+      },
     });
   } catch (err) {
     console.error("adminBanUser Error:", err);
@@ -271,10 +375,12 @@ export async function adminUnbanUser(req, res) {
       });
 
     const previousReason = user.banReason;
+    const previousExpiry = user.banExpiresAt ?? null;
     user.isBanned = false;
     user.banReason = null;
     user.bannedBy = null;
     user.bannedAt = null;
+    user.banExpiresAt = null;
     await user.save();
 
     await createAdminLog(req, {
@@ -282,7 +388,10 @@ export async function adminUnbanUser(req, res) {
       targetType: "User",
       targetId: user._id,
       targetLabel: `${user.firstName} ${user.lastName} <${user.email}>`,
-      meta: { previousBanReason: previousReason },
+      meta: {
+        previousBanReason: previousReason,
+        previousBanExpiry: previousExpiry,
+      },
     });
 
     return res.status(200).json({
@@ -299,10 +408,6 @@ export async function adminUnbanUser(req, res) {
     });
   }
 }
-
-// ─── Auth middleware — ban check (no auto-lift needed, bans are permanent) ────
-// The authMiddleware stays lean: just verify the token, then in the controller
-// fetch the user to check isBanned. No DB hit needed on every request.
 
 function deriveDisplayStatus(a) {
   if (a.cancelledByUser) return "cancelled";

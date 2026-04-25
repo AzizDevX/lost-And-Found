@@ -51,8 +51,6 @@ export async function adminMiddleware(req, res, next) {
       });
     }
 
-    // Fetch admin record to get username (needed by audit logger)
-    // Use lean() for performance; select only what we need
     const admin = await Admin.findById(decoded.id)
       .select("username role isActive")
       .lean();
@@ -82,13 +80,6 @@ export async function adminMiddleware(req, res, next) {
   }
 }
 
-/**
- * requireRole(role)
- * Must be used AFTER adminMiddleware.
- *
- * Example:
- *   router.delete("/:id", adminMiddleware, requireRole("superadmin"), handler)
- */
 export function requireRole(role) {
   return (req, res, next) => {
     if (req.admin?.role !== role) {

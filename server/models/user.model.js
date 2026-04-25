@@ -1,10 +1,5 @@
 import mongoose from "mongoose";
 
-/**
- * User model — bans are PERMANENT.
- * A ban is only lifted by an explicit admin PATCH /api/admin/users/:id/unban call.
- * There is no timed ban and no auto-expiry.
- */
 const userSchema = new mongoose.Schema(
   {
     userAvatar: {
@@ -39,7 +34,6 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true, minlength: 6, select: false },
     isBanned: { type: Boolean, default: false, required: true, index: true },
 
-    // Ban metadata — null when not banned
     banReason: { type: String, trim: true, maxlength: 300, default: null },
     bannedBy: {
       type: mongoose.Schema.Types.ObjectId,
@@ -47,6 +41,7 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
     bannedAt: { type: Date, default: null },
+    banExpiresAt: { type: Date, default: null },
   },
   { timestamps: true },
 );

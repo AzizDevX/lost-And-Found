@@ -147,6 +147,10 @@
     },
     "announcements": {
       "title": "Mes Annonces",
+      "imagesDeleted": {
+        "rejected": "Les images ont été automatiquement supprimées après le rejet.",
+        "cancelled": "Les images ont été automatiquement supprimées après l'annulation."
+      },
       "tabs": {
         "pending": "En attente",
         "active": "Actives",
@@ -173,7 +177,8 @@
         "accepted": "Active",
         "rejected": "Rejetée",
         "cancelled": "Annulée",
-        "confirmed": "Résolue"
+        "confirmed": "Résolue",
+        "closedWithoutMatch": "Clôturé – Sans résultat"
       },
       "actions": {
         "cancel": "Annuler",
@@ -256,6 +261,10 @@
     }
   },
   "announcements": {
+    "imagesDeleted": {
+      "rejected": "Les images ont été automatiquement supprimées après le rejet.",
+      "cancelled": "Les images ont été automatiquement supprimées après l'annulation."
+    },
     "eyebrow": "Ted-Université Lost & Found",
     "title": "Annonces",
     "subtitle": "Consultez les signalements d'objets perdus et trouvés sur le campus.",
@@ -327,7 +336,8 @@
       "submitting": "Publication..."
     },
     "post": {
-      "imageAlt": "Photo de l'objet"
+      "imageAlt": "Photo de l'objet",
+      "imageNotAvailable": "Photo non disponible"
     },
     "empty": {
       "title": "Aucune annonce pour l'instant",

@@ -43,7 +43,6 @@ function validateEditAccountData(req, res, next) {
         });
       }
 
-      // Year + specialty combo validation
       const { year, specialty } = value;
       if (year && specialty) {
         const isLicense = ["L1", "L2", "L3"].includes(year);

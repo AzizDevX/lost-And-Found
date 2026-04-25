@@ -38,6 +38,8 @@ interface Announcement {
   displayStatus?: string;
   cancelledByUser: boolean;
   userConfirmed: boolean;
+  closedWithoutMatch: boolean;
+  closedWithoutMatchAt?: string;
   isReturned: boolean;
   rejectionReason?: string;
   author: {
@@ -63,6 +65,7 @@ interface User {
   banReason?: string;
   bannedAt?: string;
   bannedBy?: string;
+  banExpiresAt?: string | null; // null = permanent, ISO string = timed
   createdAt: string;
   announcementStats?: { total: number; accepted: number; pending: number };
 }
@@ -92,6 +95,8 @@ interface OverviewStats {
   accepted: number;
   rejected: number;
   cancelled: number;
+  confirmed: number;
+  closedWithoutMatch: number;
   totalUsers: number;
   banned: number;
   returned: number;
@@ -576,6 +581,8 @@ class AdminAPI {
         accepted: number;
         rejected: number;
         cancelled: number;
+        confirmed: number;
+        closedWithoutMatch: number;
       };
     }>(`/announcements?${params}`);
   }
@@ -600,6 +607,11 @@ class AdminAPI {
       body: JSON.stringify({ isReturned }),
     });
   }
+  adminCloseWithoutMatch(id: string) {
+    return this.req(`/announcements/${id}/admin-close`, {
+      method: "PATCH",
+    });
+  }
   deleteAnnouncement(id: string) {
     return this.req(`/announcements/${id}`, { method: "DELETE" });
   }
@@ -620,13 +632,10 @@ class AdminAPI {
       pagination: Pagination;
     }>(`/users/${id}/announcements?${params}`);
   }
-  banUser(id: string, reason: string, durationDays?: number) {
+  banUser(id: string, reason: string, durationDays: number | null) {
     return this.req(`/users/${id}/ban`, {
       method: "PATCH",
-      body: JSON.stringify({
-        reason,
-        ...(durationDays ? { durationDays } : {}),
-      }),
+      body: JSON.stringify({ reason, durationDays }),
     });
   }
   unbanUser(id: string) {
@@ -755,7 +764,7 @@ function ConfirmModal({
             onClick={onClose}
           >
             <Icon.Close style={{ width: 12 }} />
-            {/* We can't call t() here, so we pass via confirmLabel trick — callers pass translated cancel too */}
+            {/* Cancel label not passed to this component; use SimpleConfirm instead */}
           </button>
           <button
             className={`${styles.btn} ${confirmClass}`}
@@ -1054,10 +1063,12 @@ function OverviewTab({
         accepted: annRes.summary.accepted,
         rejected: annRes.summary.rejected,
         totalUsers: userRes.pagination.total,
-        banned: 0,
-        returned: 0,
-        active: 0,
+        banned: 0, // TODO: fetch from dedicated endpoint (isBanned=true user count)
+        returned: annRes.summary.confirmed ?? 0, // TODO: server-side addition needed for true returned count
+        active: annRes.summary.accepted,
         cancelled: annRes.summary.cancelled,
+        confirmed: annRes.summary.confirmed ?? 0,
+        closedWithoutMatch: annRes.summary.closedWithoutMatch ?? 0,
       });
       setLogs((logRes as { success: boolean; data: AdminLog[] }).data ?? []);
     } catch (e: unknown) {
@@ -1316,7 +1327,7 @@ function AnnouncementDetailModal({
 
   // Confirmation states
   const [confirmAction, setConfirmAction] = useState<
-    "accept" | "reject" | "delete" | "returned" | null
+    "accept" | "reject" | "delete" | "returned" | "closeWithoutMatch" | null
   >(null);
 
   async function handleReview(status: "accepted" | "rejected") {
@@ -1349,6 +1360,21 @@ function AnnouncementDetailModal({
     }
   }
 
+  async function handleCloseWithoutMatch() {
+    setLoading(true);
+    setError("");
+    try {
+      await api.adminCloseWithoutMatch(ann._id);
+      onRefresh();
+      onClose();
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : t("common.error"));
+    } finally {
+      setLoading(false);
+      setConfirmAction(null);
+    }
+  }
+
   async function handleDelete() {
     setLoading(true);
     setError("");
@@ -1366,16 +1392,23 @@ function AnnouncementDetailModal({
 
   const displayStatus = ann.cancelledByUser
     ? "cancelled"
-    : ann.userConfirmed
-      ? "confirmed"
-      : ann.status;
+    : ann.closedWithoutMatch
+      ? "closedWithoutMatch"
+      : ann.userConfirmed
+        ? "confirmed"
+        : ann.isReturned && ann.status === "accepted"
+          ? "returned"
+          : ann.status;
   const statusBadgeClass =
     {
       pending: styles.badgePending,
       accepted: styles.badgeAccepted,
+      returned: styles.badgeReturned ?? styles.badgeConfirmed,
       rejected: styles.badgeRejected,
       cancelled: styles.badgeCancelled,
       confirmed: styles.badgeConfirmed,
+      closedWithoutMatch:
+        styles.badgeClosedWithoutMatch ?? styles.badgeCancelled,
     }[displayStatus] ?? styles.badgePending;
 
   return (
@@ -1433,37 +1466,101 @@ function AnnouncementDetailModal({
                 {t("announcements.modal.confirmedNotice")}
               </div>
             )}
+            {ann.closedWithoutMatch &&
+              !ann.cancelledByUser &&
+              !ann.userConfirmed && (
+                <div
+                  className={`${styles.alert}`}
+                  style={{
+                    background: "var(--yellow-dim)",
+                    border: "1px solid var(--yellow-border)",
+                    color: "var(--accent)",
+                    marginBottom: 14,
+                  }}
+                >
+                  <Icon.Warn />
+                  {t("announcements.modal.closedWithoutMatchNotice")}
+                </div>
+              )}
 
-            {ann.images?.length > 0 && (
+            {/* ── Image section: smart logic ───────────────────────────────── */}
+            {displayStatus === "rejected" || displayStatus === "cancelled" ? (
+              /* Cancelled / rejected → images are deleted on the server.
+                 Show one single notice, never try to render the images. */
+              <div
+                className={styles.alert}
+                style={{
+                  background: "var(--yellow-dim)",
+                  border: "1px solid var(--yellow-border)",
+                  color: "var(--accent)",
+                  marginBottom: 14,
+                }}
+              >
+                <Icon.Warn />
+                {t("announcements.modal.imagesDeleted")}
+              </div>
+            ) : ann.images?.length > 0 ? (
+              /* Any other status → try to render images, show error per image if it fails */
               <div>
                 {bigImg ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={`${API.replace("/api", "")}/${bigImg}`}
-                    alt=""
-                    className={styles.detailImageFull}
-                    onClick={() => setBigImg(null)}
-                    style={{ cursor: "zoom-out", marginBottom: 10 }}
-                  />
+                  <div className={styles.detailImageFullWrap}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={`${API.replace("/api", "")}/${bigImg}`}
+                      alt=""
+                      className={styles.detailImageFull}
+                      onClick={() => setBigImg(null)}
+                      style={{ cursor: "zoom-out", marginBottom: 10 }}
+                      onError={(e) => {
+                        const el = e.currentTarget;
+                        el.style.display = "none";
+                        const fb = el.nextElementSibling as HTMLElement | null;
+                        if (fb) fb.style.display = "flex";
+                      }}
+                    />
+                    <div
+                      className={styles.imgErrorFull}
+                      style={{ display: "none" }}
+                      onClick={() => setBigImg(null)}
+                    >
+                      <Icon.Warn />
+                      <span>{t("announcements.modal.imageLoadError")}</span>
+                    </div>
+                  </div>
                 ) : (
                   <div
                     className={styles.detailImages}
                     style={{ marginBottom: 14 }}
                   >
                     {ann.images.map((img, i) => (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        key={i}
-                        src={`${API.replace("/api", "")}/${img}`}
-                        alt=""
-                        className={styles.detailImage}
-                        onClick={() => setBigImg(img)}
-                      />
+                      <div key={i} className={styles.detailImageWrap}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={`${API.replace("/api", "")}/${img}`}
+                          alt=""
+                          className={styles.detailImage}
+                          onClick={() => setBigImg(img)}
+                          onError={(e) => {
+                            const el = e.currentTarget;
+                            el.style.display = "none";
+                            const fb =
+                              el.nextElementSibling as HTMLElement | null;
+                            if (fb) fb.style.display = "flex";
+                          }}
+                        />
+                        <div
+                          className={styles.imgError}
+                          style={{ display: "none" }}
+                        >
+                          <Icon.Warn />
+                          <span>{t("announcements.modal.imageLoadError")}</span>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
               </div>
-            )}
+            ) : null}
 
             <div className={styles.detailRow}>
               <div className={styles.detailField}>
@@ -1488,19 +1585,6 @@ function AnnouncementDetailModal({
                     >[0],
                   )}
                 </span>
-                {ann.isReturned && (
-                  <span
-                    className={styles.badge}
-                    style={{
-                      marginLeft: 6,
-                      background: "var(--green-dim)",
-                      border: "1px solid var(--green-border)",
-                      color: "var(--success)",
-                    }}
-                  >
-                    {t("announcements.status.returned")}
-                  </span>
-                )}
               </div>
               <div className={styles.detailField}>
                 <span className={styles.detailLabel}>
@@ -1556,7 +1640,8 @@ function AnnouncementDetailModal({
 
             {(ann.status === "pending" || ann.status === "accepted") &&
               !ann.cancelledByUser &&
-              !ann.userConfirmed && (
+              !ann.userConfirmed &&
+              !ann.closedWithoutMatch && (
                 <div className={styles.formField} style={{ marginTop: 16 }}>
                   <label className={styles.formLabel}>
                     {t("announcements.modal.rejectTitle")}
@@ -1595,11 +1680,22 @@ function AnnouncementDetailModal({
               </>
             )}
 
-            {/* ACCEPTED (active): mark returned + force-reject */}
+            {/* ACCEPTED (active): mark returned + close no match + force-reject */}
             {ann.status === "accepted" &&
               !ann.cancelledByUser &&
-              !ann.userConfirmed && (
+              !ann.userConfirmed &&
+              !ann.closedWithoutMatch && (
                 <>
+                  {!ann.isReturned && (
+                    <button
+                      className={`${styles.btn} ${styles.btnSecondary}`}
+                      onClick={() => setConfirmAction("closeWithoutMatch")}
+                      disabled={loading}
+                    >
+                      <Icon.X />
+                      {t("announcements.actions.closeWithoutMatch")}
+                    </button>
+                  )}
                   <button
                     className={`${styles.btn} ${ann.isReturned ? styles.btnSecondary : styles.btnSuccess}`}
                     onClick={() => setConfirmAction("returned")}
@@ -1621,31 +1717,17 @@ function AnnouncementDetailModal({
                 </>
               )}
 
-            {/* REJECTED (not cancelled): reverse to accepted */}
-            {ann.status === "rejected" && !ann.cancelledByUser && (
-              <button
-                className={`${styles.btn} ${styles.btnSuccess}`}
-                onClick={() => setConfirmAction("accept")}
-                disabled={loading}
-              >
-                <Icon.Check />
-                {t("announcements.actions.reverseAccept")}
-              </button>
-            )}
+            {/* CANCELLED / CONFIRMED / closedWithoutMatch: read-only — no action buttons */}
 
-            {/* CANCELLED / CONFIRMED: read-only — no action buttons */}
-
-            {/* DELETE — superadmin only, always */}
-            {isSuperAdmin && (
-              <button
-                className={`${styles.btn} ${styles.btnDanger}`}
-                onClick={() => setConfirmAction("delete")}
-                disabled={loading}
-              >
-                <Icon.Trash />
-                {t("announcements.actions.delete")}
-              </button>
-            )}
+            {/* DELETE — all admins, always */}
+            <button
+              className={`${styles.btn} ${styles.btnDanger}`}
+              onClick={() => setConfirmAction("delete")}
+              disabled={loading}
+            >
+              <Icon.Trash />
+              {t("announcements.actions.delete")}
+            </button>
             <button
               className={`${styles.btn} ${styles.btnSecondary}`}
               onClick={onClose}
@@ -1659,22 +1741,10 @@ function AnnouncementDetailModal({
       {/* Nested confirmation modals */}
       {confirmAction === "accept" && (
         <SimpleConfirm
-          title={
-            ann.status === "rejected"
-              ? t("announcements.modal.confirmReverseAcceptTitle")
-              : t("announcements.modal.confirmAcceptTitle")
-          }
-          message={
-            ann.status === "rejected"
-              ? t("announcements.modal.confirmReverseAcceptMessage")
-              : t("announcements.modal.confirmAcceptMessage")
-          }
+          title={t("announcements.modal.confirmAcceptTitle")}
+          message={t("announcements.modal.confirmAcceptMessage")}
           cancelLabel={t("common.cancel")}
-          confirmLabel={
-            ann.status === "rejected"
-              ? t("announcements.actions.reverseAccept")
-              : t("announcements.actions.accept")
-          }
+          confirmLabel={t("announcements.actions.accept")}
           confirmClass={styles.btnSuccess}
           icon={<Icon.Check />}
           onClose={() => setConfirmAction(null)}
@@ -1760,6 +1830,19 @@ function AnnouncementDetailModal({
           loading={loading}
         />
       )}
+      {confirmAction === "closeWithoutMatch" && (
+        <SimpleConfirm
+          title={t("announcements.modal.confirmCloseWithoutMatchTitle")}
+          message={t("announcements.modal.confirmCloseWithoutMatchMessage")}
+          cancelLabel={t("common.cancel")}
+          confirmLabel={t("announcements.actions.closeWithoutMatch")}
+          confirmClass={styles.btnDanger}
+          icon={<Icon.X />}
+          onClose={() => setConfirmAction(null)}
+          onConfirm={handleCloseWithoutMatch}
+          loading={loading}
+        />
+      )}
     </>
   );
 }
@@ -1783,7 +1866,12 @@ function AnnouncementsTab({
     totalPages: 1,
   });
   const [statusFilter, setStatusFilter] = useState<
-    "all" | "pending" | "accepted" | "rejected" | "cancelled"
+    | "all"
+    | "pending"
+    | "accepted"
+    | "rejected"
+    | "cancelled"
+    | "closedWithoutMatch"
   >("pending");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -1799,6 +1887,8 @@ function AnnouncementsTab({
   const [confirmReturned, setConfirmReturned] = useState<Announcement | null>(
     null,
   );
+  const [confirmCloseNoMatch, setConfirmCloseNoMatch] =
+    useState<Announcement | null>(null);
 
   const [, startTransition] = useTransition();
 
@@ -1880,11 +1970,28 @@ function AnnouncementsTab({
     }
   }
 
+  async function handleCloseNoMatch(ann: Announcement) {
+    setActionLoading(ann._id);
+    try {
+      await api.adminCloseWithoutMatch(ann._id);
+      await load(pagination.page);
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : t("common.error"));
+    } finally {
+      setActionLoading(null);
+      setConfirmCloseNoMatch(null);
+    }
+  }
+
   const filterTabs: { key: typeof statusFilter; label: string }[] = [
     { key: "pending", label: t("announcements.filters.pending") },
     { key: "accepted", label: t("announcements.filters.accepted") },
     { key: "rejected", label: t("announcements.filters.rejected") },
     { key: "cancelled", label: t("announcements.filters.cancelled") },
+    {
+      key: "closedWithoutMatch",
+      label: t("announcements.filters.closedWithoutMatch"),
+    },
     { key: "all", label: t("announcements.filters.all") },
   ];
 
@@ -1914,14 +2021,6 @@ function AnnouncementsTab({
             </button>
           ))}
         </div>
-        <div className={styles.toolbarSpacer} />
-        <button
-          className={styles.topBarRefresh}
-          onClick={() => load(pagination.page)}
-        >
-          <Icon.Refresh />
-          {t("common.refresh")}
-        </button>
       </div>
 
       <div className={styles.tableWrap}>
@@ -1953,16 +2052,23 @@ function AnnouncementsTab({
               {announcements.map((ann) => {
                 const displayStatus = ann.cancelledByUser
                   ? "cancelled"
-                  : ann.userConfirmed
-                    ? "confirmed"
-                    : ann.status;
+                  : ann.closedWithoutMatch
+                    ? "closedWithoutMatch"
+                    : ann.userConfirmed
+                      ? "confirmed"
+                      : ann.isReturned && ann.status === "accepted"
+                        ? "returned"
+                        : ann.status;
                 const statusCls =
                   {
                     pending: styles.badgePending,
                     accepted: styles.badgeAccepted,
+                    returned: styles.badgeReturned ?? styles.badgeConfirmed,
                     rejected: styles.badgeRejected,
                     cancelled: styles.badgeCancelled,
                     confirmed: styles.badgeConfirmed,
+                    closedWithoutMatch:
+                      styles.badgeClosedWithoutMatch ?? styles.badgeCancelled,
                   }[displayStatus] ?? styles.badgePending;
 
                 return (
@@ -2080,11 +2186,24 @@ function AnnouncementsTab({
                           </>
                         )}
 
-                        {/* ACCEPTED (active): mark returned + force-reject */}
+                        {/* ACCEPTED (active): close no match + mark returned + force-reject */}
                         {ann.status === "accepted" &&
                           !ann.cancelledByUser &&
-                          !ann.userConfirmed && (
+                          !ann.userConfirmed &&
+                          !ann.closedWithoutMatch && (
                             <>
+                              {!ann.isReturned && (
+                                <button
+                                  className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
+                                  title={t(
+                                    "announcements.actions.closeWithoutMatch",
+                                  )}
+                                  onClick={() => setConfirmCloseNoMatch(ann)}
+                                  disabled={actionLoading === ann._id}
+                                >
+                                  <Icon.Ban />
+                                </button>
+                              )}
                               <button
                                 className={`${styles.iconBtn} ${ann.isReturned ? styles.iconBtnActive : styles.iconBtnSuccess}`}
                                 title={
@@ -2110,32 +2229,16 @@ function AnnouncementsTab({
                             </>
                           )}
 
-                        {/* REJECTED (not cancelled): reverse to accepted */}
-                        {ann.status === "rejected" && !ann.cancelledByUser && (
-                          <button
-                            className={`${styles.iconBtn} ${styles.iconBtnSuccess}`}
-                            title={t("announcements.actions.reverseAccept")}
-                            onClick={() =>
-                              setConfirmReview({ ann, status: "accepted" })
-                            }
-                            disabled={actionLoading === ann._id}
-                          >
-                            <Icon.Check />
-                          </button>
-                        )}
+                        {/* REJECTED / CANCELLED / CONFIRMED / closedWithoutMatch: view-only — no action buttons except delete */}
 
-                        {/* CANCELLED / CONFIRMED: view-only — no action buttons except delete */}
-
-                        {/* DELETE — superadmin only, always available */}
-                        {session.role === "superadmin" && (
-                          <button
-                            className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
-                            title={t("announcements.actions.delete")}
-                            onClick={() => setConfirmDelete(ann)}
-                          >
-                            <Icon.Trash />
-                          </button>
-                        )}
+                        {/* DELETE — all admins, always available */}
+                        <button
+                          className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
+                          title={t("announcements.actions.delete")}
+                          onClick={() => setConfirmDelete(ann)}
+                        >
+                          <Icon.Trash />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -2184,18 +2287,14 @@ function AnnouncementsTab({
         <SimpleConfirm
           title={
             confirmReview.status === "accepted"
-              ? confirmReview.ann.status === "rejected"
-                ? t("announcements.modal.confirmReverseAcceptTitle")
-                : t("announcements.modal.confirmAcceptTitle")
+              ? t("announcements.modal.confirmAcceptTitle")
               : confirmReview.ann.status === "accepted"
                 ? t("announcements.modal.confirmForceRejectTitle")
                 : t("announcements.modal.confirmRejectTitle")
           }
           message={
             confirmReview.status === "accepted"
-              ? confirmReview.ann.status === "rejected"
-                ? t("announcements.modal.confirmReverseAcceptMessage")
-                : t("announcements.modal.confirmAcceptMessage")
+              ? t("announcements.modal.confirmAcceptMessage")
               : confirmReview.ann.status === "accepted"
                 ? t("announcements.modal.confirmForceRejectMessage")
                 : t("announcements.modal.confirmRejectMessage")
@@ -2203,9 +2302,7 @@ function AnnouncementsTab({
           cancelLabel={t("common.cancel")}
           confirmLabel={
             confirmReview.status === "accepted"
-              ? confirmReview.ann.status === "rejected"
-                ? t("announcements.actions.reverseAccept")
-                : t("announcements.actions.accept")
+              ? t("announcements.actions.accept")
               : confirmReview.ann.status === "accepted"
                 ? t("announcements.actions.forceReject")
                 : t("announcements.actions.reject")
@@ -2225,8 +2322,6 @@ function AnnouncementsTab({
           loading={actionLoading === confirmReview.ann._id}
         />
       )}
-
-      {/* Delete confirmation */}
       {confirmDelete && (
         <SimpleConfirm
           title={t("announcements.modal.deleteTitle")}
@@ -2265,6 +2360,21 @@ function AnnouncementsTab({
           onClose={() => setConfirmReturned(null)}
           onConfirm={() => handleToggleReturned(confirmReturned)}
           loading={actionLoading === confirmReturned._id}
+        />
+      )}
+
+      {/* Close without match confirmation */}
+      {confirmCloseNoMatch && (
+        <SimpleConfirm
+          title={t("announcements.modal.confirmCloseWithoutMatchTitle")}
+          message={t("announcements.modal.confirmCloseWithoutMatchMessage")}
+          cancelLabel={t("common.cancel")}
+          confirmLabel={t("announcements.actions.closeWithoutMatch")}
+          confirmClass={styles.btnDanger}
+          icon={<Icon.Ban />}
+          onClose={() => setConfirmCloseNoMatch(null)}
+          onConfirm={() => handleCloseNoMatch(confirmCloseNoMatch)}
+          loading={actionLoading === confirmCloseNoMatch._id}
         />
       )}
     </div>
@@ -2485,6 +2595,18 @@ function UserHistoryModal({
                       {formatDate(user.bannedAt, locale)}
                     </div>
                   )}
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "var(--danger)",
+                      opacity: 0.8,
+                      marginTop: 2,
+                    }}
+                  >
+                    {user.banExpiresAt
+                      ? `${t("users.banExpires")}: ${formatDate(user.banExpiresAt, locale)}`
+                      : t("users.banPermanent")}
+                  </div>
                   {user.banReason && (
                     <div
                       style={{
@@ -2569,16 +2691,25 @@ function UserHistoryModal({
                     {announcements.map((a) => {
                       const ds = a.cancelledByUser
                         ? "cancelled"
-                        : a.userConfirmed
-                          ? "confirmed"
-                          : a.status;
+                        : a.closedWithoutMatch
+                          ? "closedWithoutMatch"
+                          : a.userConfirmed
+                            ? "confirmed"
+                            : a.isReturned && a.status === "accepted"
+                              ? "returned"
+                              : a.status;
                       const sc =
                         {
                           pending: styles.badgePending,
                           accepted: styles.badgeAccepted,
+                          returned:
+                            styles.badgeReturned ?? styles.badgeConfirmed,
                           rejected: styles.badgeRejected,
                           cancelled: styles.badgeCancelled,
                           confirmed: styles.badgeConfirmed,
+                          closedWithoutMatch:
+                            styles.badgeClosedWithoutMatch ??
+                            styles.badgeCancelled,
                         }[ds] ?? styles.badgePending;
                       return (
                         <tr key={a._id}>
@@ -2727,7 +2858,8 @@ function UserHistoryModal({
                               {/* ACCEPTED (active): force-reject */}
                               {a.status === "accepted" &&
                                 !a.cancelledByUser &&
-                                !a.userConfirmed && (
+                                !a.userConfirmed &&
+                                !a.closedWithoutMatch && (
                                   <button
                                     className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
                                     title={t(
@@ -2745,37 +2877,17 @@ function UserHistoryModal({
                                   </button>
                                 )}
 
-                              {/* REJECTED (not cancelled): reverse to accepted */}
-                              {a.status === "rejected" &&
-                                !a.cancelledByUser && (
-                                  <button
-                                    className={`${styles.iconBtn} ${styles.iconBtnSuccess}`}
-                                    title={t(
-                                      "announcements.actions.reverseAccept",
-                                    )}
-                                    onClick={() =>
-                                      setConfirmReview({
-                                        ann: a,
-                                        status: "accepted",
-                                      })
-                                    }
-                                    disabled={actionLoading === a._id}
-                                  >
-                                    <Icon.Check />
-                                  </button>
-                                )}
+                              {/* REJECTED / CANCELLED / CONFIRMED / closedWithoutMatch: view-only — no action buttons */}
 
-                              {/* DELETE — superadmin only */}
-                              {session.role === "superadmin" && (
-                                <button
-                                  className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
-                                  title={t("announcements.actions.delete")}
-                                  onClick={() => setConfirmDelete(a)}
-                                  disabled={actionLoading === a._id}
-                                >
-                                  <Icon.Trash />
-                                </button>
-                              )}
+                              {/* DELETE — all admins */}
+                              <button
+                                className={`${styles.iconBtn} ${styles.iconBtnDanger}`}
+                                title={t("announcements.actions.delete")}
+                                onClick={() => setConfirmDelete(a)}
+                                disabled={actionLoading === a._id}
+                              >
+                                <Icon.Trash />
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -2825,18 +2937,14 @@ function UserHistoryModal({
         <SimpleConfirm
           title={
             confirmReview.status === "accepted"
-              ? confirmReview.ann.status === "rejected"
-                ? t("announcements.modal.confirmReverseAcceptTitle")
-                : t("announcements.modal.confirmAcceptTitle")
+              ? t("announcements.modal.confirmAcceptTitle")
               : confirmReview.ann.status === "accepted"
                 ? t("announcements.modal.confirmForceRejectTitle")
                 : t("announcements.modal.confirmRejectTitle")
           }
           message={
             confirmReview.status === "accepted"
-              ? confirmReview.ann.status === "rejected"
-                ? t("announcements.modal.confirmReverseAcceptMessage")
-                : t("announcements.modal.confirmAcceptMessage")
+              ? t("announcements.modal.confirmAcceptMessage")
               : confirmReview.ann.status === "accepted"
                 ? t("announcements.modal.confirmForceRejectMessage")
                 : t("announcements.modal.confirmRejectMessage")
@@ -2844,9 +2952,7 @@ function UserHistoryModal({
           cancelLabel={t("common.cancel")}
           confirmLabel={
             confirmReview.status === "accepted"
-              ? confirmReview.ann.status === "rejected"
-                ? t("announcements.actions.reverseAccept")
-                : t("announcements.actions.accept")
+              ? t("announcements.actions.accept")
               : confirmReview.ann.status === "accepted"
                 ? t("announcements.actions.forceReject")
                 : t("announcements.actions.reject")
@@ -2886,6 +2992,16 @@ function UserHistoryModal({
 
 // ─── Ban Modal ────────────────────────────────────────────────────────────────
 
+const BAN_DURATIONS: { days: number | null; labelKey: string }[] = [
+  { days: 1, labelKey: "users.modal.banDuration1" },
+  { days: 3, labelKey: "users.modal.banDuration3" },
+  { days: 7, labelKey: "users.modal.banDuration7" },
+  { days: 14, labelKey: "users.modal.banDuration14" },
+  { days: 30, labelKey: "users.modal.banDuration30" },
+  { days: 90, labelKey: "users.modal.banDuration90" },
+  { days: null, labelKey: "users.modal.banTypePermanent" },
+];
+
 function BanModal({
   user,
   onClose,
@@ -2894,15 +3010,12 @@ function BanModal({
 }: {
   user: User;
   onClose: () => void;
-  onConfirm: (reason: string, durationDays?: number) => void;
+  onConfirm: (reason: string, durationDays: number | null) => void;
   loading: boolean;
 }) {
   const t = useTranslations("admin");
   const [reason, setReason] = useState("");
-  const [banType, setBanType] = useState<"permanent" | "temporary">(
-    "permanent",
-  );
-  const [durationDays, setDurationDays] = useState(7);
+  const [durationDays, setDurationDays] = useState<number | null>(7); // default 7 days
   const [err, setErr] = useState("");
 
   function submit() {
@@ -2914,20 +3027,10 @@ function BanModal({
       setErr(t("users.modal.banReasonMaxErr"));
       return;
     }
-    onConfirm(
-      reason.trim(),
-      banType === "temporary" ? durationDays : undefined,
-    );
+    onConfirm(reason.trim(), durationDays);
   }
 
-  const durationOptions = [
-    { value: 1, label: t("users.modal.banDuration1") },
-    { value: 3, label: t("users.modal.banDuration3") },
-    { value: 7, label: t("users.modal.banDuration7") },
-    { value: 14, label: t("users.modal.banDuration14") },
-    { value: 30, label: t("users.modal.banDuration30") },
-    { value: 90, label: t("users.modal.banDuration90") },
-  ];
+  const isPermanent = durationDays === null;
 
   return (
     <div className={styles.modalOverlay} onClick={onClose}>
@@ -2955,49 +3058,77 @@ function BanModal({
             </div>
           )}
 
-          <div className={styles.formField}>
+          {/* Duration selector */}
+          <div className={styles.formField} style={{ marginBottom: 14 }}>
             <label className={styles.formLabel}>
-              {t("users.modal.banTypeLabel")}
+              {t("users.modal.banDurationLabel")}
             </label>
-            <div className={styles.banTypeToggle}>
-              <button
-                className={`${styles.banTypeBtn} ${banType === "permanent" ? styles.banTypeBtnActive : ""}`}
-                onClick={() => setBanType("permanent")}
-                type="button"
-              >
-                <Icon.Ban />
-                {t("users.modal.banTypePermanent")}
-              </button>
-              <button
-                className={`${styles.banTypeBtn} ${banType === "temporary" ? styles.banTypeBtnActive : ""}`}
-                onClick={() => setBanType("temporary")}
-                type="button"
-              >
-                <Icon.Clock />
-                {t("users.modal.banTypeTemporary")}
-              </button>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 7,
+                marginTop: 6,
+              }}
+            >
+              {BAN_DURATIONS.map(({ days, labelKey }) => {
+                const active = days === durationDays;
+                return (
+                  <button
+                    key={String(days)}
+                    type="button"
+                    onClick={() => setDurationDays(days)}
+                    style={{
+                      padding: "5px 13px",
+                      borderRadius: 7,
+                      fontSize: 13,
+                      fontWeight: active ? 700 : 500,
+                      cursor: "pointer",
+                      border: active
+                        ? days === null
+                          ? "2px solid var(--danger)"
+                          : "2px solid var(--accent)"
+                        : "1.5px solid var(--border)",
+                      background: active
+                        ? days === null
+                          ? "var(--danger-dim, rgba(239,68,68,.12))"
+                          : "var(--yellow-dim)"
+                        : "var(--surface)",
+                      color: active
+                        ? days === null
+                          ? "var(--danger)"
+                          : "var(--accent)"
+                        : "var(--text-secondary)",
+                      transition: "all 0.15s",
+                    }}
+                  >
+                    {t(labelKey as Parameters<typeof t>[0])}
+                  </button>
+                );
+              })}
+            </div>
+            {/* Preview */}
+            <div
+              style={{
+                marginTop: 9,
+                fontSize: 12.5,
+                color: isPermanent ? "var(--danger)" : "var(--text-muted)",
+                fontStyle: "italic",
+              }}
+            >
+              {isPermanent
+                ? t("users.modal.banPreviewPermanent")
+                : t("users.modal.banPreviewTimed", {
+                    date: new Date(
+                      Date.now() + (durationDays ?? 0) * 86400000,
+                    ).toLocaleDateString(undefined, {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    }),
+                  })}
             </div>
           </div>
-
-          {banType === "temporary" && (
-            <div className={styles.formField}>
-              <label className={styles.formLabel}>
-                {t("users.modal.banDurationLabel")}
-              </label>
-              <div className={styles.durationGrid}>
-                {durationOptions.map(({ value, label }) => (
-                  <button
-                    key={value}
-                    className={`${styles.durationBtn} ${durationDays === value ? styles.durationBtnActive : ""}`}
-                    onClick={() => setDurationDays(value)}
-                    type="button"
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           <div className={styles.formField}>
             <label className={styles.formLabel}>
@@ -3026,12 +3157,14 @@ function BanModal({
             {t("common.cancel")}
           </button>
           <button
-            className={`${styles.btn} ${styles.btnDanger}`}
+            className={`${styles.btn} ${isPermanent ? styles.btnDanger : (styles.btnWarning ?? styles.btnDanger)}`}
             onClick={submit}
             disabled={loading}
           >
             {loading ? <span className={styles.spinner} /> : <Icon.Ban />}
-            {t("users.actions.ban")}
+            {isPermanent
+              ? t("users.modal.banSubmitPermanent")
+              : t("users.modal.banSubmitTimed")}
           </button>
         </div>
       </div>
@@ -3102,7 +3235,7 @@ function UsersTab({ api, session }: { api: AdminAPI; session: AdminSession }) {
     return () => window.removeEventListener("admin:refresh", onRefresh);
   }, [load, pagination.page]);
 
-  async function handleBan(reason: string, durationDays?: number) {
+  async function handleBan(reason: string, durationDays: number | null) {
     if (!banUser) return;
     setBanLoading(true);
     try {
@@ -3234,6 +3367,20 @@ function UsersTab({ api, session }: { api: AdminAPI; session: AdminSession }) {
                               {t("users.banReason")}:{" "}
                               {user.banReason.slice(0, 60)}
                               {user.banReason.length > 60 ? "…" : ""}
+                            </div>
+                          )}
+                          {user.isBanned && (
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: "var(--danger)",
+                                opacity: 0.7,
+                                marginTop: 1,
+                              }}
+                            >
+                              {user.banExpiresAt
+                                ? `${t("users.banExpires")}: ${formatDate(user.banExpiresAt, locale)}`
+                                : t("users.banPermanent")}
                             </div>
                           )}
                         </div>
@@ -3378,6 +3525,17 @@ function UsersTab({ api, session }: { api: AdminAPI; session: AdminSession }) {
                   }}
                 >
                   {t("users.banReason")}: {unbanUser.banReason}
+                  {unbanUser.banExpiresAt && (
+                    <div style={{ marginTop: 4, fontSize: 12, opacity: 0.8 }}>
+                      {t("users.banExpires")}:{" "}
+                      {formatDate(unbanUser.banExpiresAt, locale)}
+                    </div>
+                  )}
+                  {!unbanUser.banExpiresAt && (
+                    <div style={{ marginTop: 4, fontSize: 12, opacity: 0.8 }}>
+                      {t("users.banPermanent")}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -3410,6 +3568,196 @@ function UsersTab({ api, session }: { api: AdminAPI; session: AdminSession }) {
 
 // ─── Logs Tab ─────────────────────────────────────────────────────────────────
 
+// ─── Log Detail Modal ─────────────────────────────────────────────────────────
+
+function LogDetailModal({
+  log,
+  onClose,
+}: {
+  log: AdminLog;
+  onClose: () => void;
+}) {
+  const t = useTranslations("admin");
+  const locale = useLocale();
+
+  function actionClass(action: string) {
+    if (action.includes("ACCEPT") || action.includes("UNBAN"))
+      return styles.logActionAccept;
+    if (
+      action.includes("REJECT") ||
+      action.includes("BAN") ||
+      action.includes("DELETE")
+    )
+      return styles.logActionReject;
+    if (
+      action.includes("LOGIN") ||
+      action.includes("LOGOUT") ||
+      action.includes("REFRESH")
+    )
+      return styles.logActionAuth;
+    return styles.logActionDefault;
+  }
+
+  const metaEntries = log.meta ? Object.entries(log.meta) : [];
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div
+        className={`${styles.modal} ${styles.modalLarge}`}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className={styles.modalHeader}>
+          <span className={styles.modalTitle}>
+            {t("logs.modal.detailTitle")}
+          </span>
+          <button className={styles.modalClose} onClick={onClose}>
+            <Icon.Close />
+          </button>
+        </div>
+
+        <div
+          className={styles.modalBody}
+          style={{ maxHeight: "75vh", overflowY: "auto" }}
+        >
+          {/* Action badge + timestamp */}
+          <div className={styles.logDetailHero}>
+            <span
+              className={`${styles.logAction} ${actionClass(log.action)}`}
+              style={{ fontSize: 13.5, padding: "5px 14px" }}
+            >
+              {t(`logs.actions.${log.action}` as Parameters<typeof t>[0], {
+                fallback: log.action,
+              })}
+            </span>
+            <span className={styles.logDetailTime}>
+              {formatDate(log.createdAt, locale)}&nbsp;&nbsp;
+              <span style={{ opacity: 0.55 }}>
+                {new Date(log.createdAt).toLocaleTimeString(
+                  locale === "fr" ? "fr-FR" : "en-GB",
+                  { hour: "2-digit", minute: "2-digit", second: "2-digit" },
+                )}
+              </span>
+            </span>
+          </div>
+
+          {/* Two-column detail grid */}
+          <div className={styles.detailRow} style={{ marginTop: 18 }}>
+            {/* Admin info */}
+            <div className={styles.logDetailCard}>
+              <div className={styles.logDetailCardTitle}>
+                {t("logs.modal.adminSection")}
+              </div>
+              <div className={styles.detailField} style={{ marginTop: 10 }}>
+                <span className={styles.detailLabel}>
+                  {t("logs.table.admin")}
+                </span>
+                <span
+                  className={styles.detailValue}
+                  style={{ fontWeight: 600 }}
+                >
+                  {log.adminUsername}
+                </span>
+              </div>
+              <div className={styles.detailField} style={{ marginTop: 8 }}>
+                <span className={styles.detailLabel}>
+                  {t("logs.modal.adminEmail")}
+                </span>
+                <span
+                  className={styles.detailValue}
+                  style={{ wordBreak: "break-all" }}
+                >
+                  {log.admin?.email ?? "—"}
+                </span>
+              </div>
+              <div className={styles.detailField} style={{ marginTop: 8 }}>
+                <span className={styles.detailLabel}>
+                  {t("logs.modal.adminRole")}
+                </span>
+                <span
+                  className={styles.detailValue}
+                  style={{ textTransform: "capitalize" }}
+                >
+                  {log.adminRole}
+                </span>
+              </div>
+            </div>
+
+            {/* Target + IP */}
+            <div className={styles.logDetailCard}>
+              <div className={styles.logDetailCardTitle}>
+                {t("logs.modal.targetSection")}
+              </div>
+              <div className={styles.detailField} style={{ marginTop: 10 }}>
+                <span className={styles.detailLabel}>
+                  {t("logs.table.target")}
+                </span>
+                <span className={styles.detailValue}>
+                  {log.targetLabel ?? "—"}
+                </span>
+              </div>
+              {log.targetType && (
+                <div className={styles.detailField} style={{ marginTop: 8 }}>
+                  <span className={styles.detailLabel}>
+                    {t("logs.modal.targetType")}
+                  </span>
+                  <span
+                    className={styles.detailValue}
+                    style={{ textTransform: "uppercase", fontSize: 12 }}
+                  >
+                    {log.targetType}
+                  </span>
+                </div>
+              )}
+              <div className={styles.detailField} style={{ marginTop: 8 }}>
+                <span className={styles.detailLabel}>{t("logs.table.ip")}</span>
+                <span className={styles.logIp}>{log.ip ?? "—"}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Meta / extra data */}
+          {metaEntries.length > 0 && (
+            <div style={{ marginTop: 18 }}>
+              <div className={styles.logDetailCardTitle}>
+                {t("logs.modal.metaSection")}
+              </div>
+              <div className={styles.logMetaGrid}>
+                {metaEntries.map(([key, value]) => (
+                  <div key={key} className={styles.logMetaRow}>
+                    <span className={styles.logMetaKey}>{key}</span>
+                    <span className={styles.logMetaValue}>
+                      {typeof value === "object"
+                        ? JSON.stringify(value, null, 2)
+                        : String(value ?? "—")}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Raw action key for reference */}
+          <div style={{ marginTop: 18 }}>
+            <div className={styles.logDetailCardTitle}>
+              {t("logs.modal.rawAction")}
+            </div>
+            <div className={styles.logRawAction}>{log.action}</div>
+          </div>
+        </div>
+
+        <div className={styles.modalFooter}>
+          <button
+            className={`${styles.btn} ${styles.btnSecondary}`}
+            onClick={onClose}
+          >
+            {t("common.close")}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function LogsTab({ api }: { api: AdminAPI }) {
   const t = useTranslations("admin");
   const locale = useLocale();
@@ -3427,7 +3775,7 @@ function LogsTab({ api }: { api: AdminAPI }) {
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
+  const [viewLog, setViewLog] = useState<AdminLog | null>(null);
   const load = useCallback(
     async (page = 1) => {
       setLoading(true);
@@ -3543,14 +3891,6 @@ function LogsTab({ api }: { api: AdminAPI }) {
             <Icon.ChevronDown />
           </span>
         </div>
-        <div className={styles.toolbarSpacer} />
-        <button
-          className={styles.topBarRefresh}
-          onClick={() => load(pagination.page)}
-        >
-          <Icon.Refresh />
-          {t("common.refresh")}
-        </button>
       </div>
 
       <div className={styles.tableWrap}>
@@ -3575,6 +3915,7 @@ function LogsTab({ api }: { api: AdminAPI }) {
                 <th>{t("logs.table.target")}</th>
                 <th>{t("logs.table.ip")}</th>
                 <th>{t("logs.table.date")}</th>
+                <th>{t("logs.table.details")}</th>
               </tr>
             </thead>
             <tbody>
@@ -3646,6 +3987,15 @@ function LogsTab({ api }: { api: AdminAPI }) {
                       {formatDate(log.createdAt, locale)}
                     </div>
                   </td>
+                  <td>
+                    <button
+                      className={styles.iconBtn}
+                      title={t("logs.modal.detailTitle")}
+                      onClick={() => setViewLog(log)}
+                    >
+                      <Icon.Eye />
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -3675,11 +4025,13 @@ function LogsTab({ api }: { api: AdminAPI }) {
           </div>
         )}
       </div>
+
+      {viewLog && (
+        <LogDetailModal log={viewLog} onClose={() => setViewLog(null)} />
+      )}
     </div>
   );
 }
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function AdminDashboardPage() {
   const t = useTranslations("admin");

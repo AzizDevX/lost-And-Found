@@ -2,23 +2,12 @@ import path from "path";
 import fs from "fs";
 import multer from "multer";
 
-/**
- * Multer uploader for announcement images.
- *
- * - Destination: uploads/announcements/<userId>/
- * - Max 5 files per request
- * - Max 5 MB per file
- * - Allowed: JPEG, PNG, WEBP
- * - Field name: "images"
- */
-
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const MAX_SIZE_MB = 5;
 const MAX_FILES = 5;
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    // Requires authMiddleware to have run first so req.user.id is available
     const folder = path.join("uploads", "announcements", req.user.id);
     fs.mkdirSync(folder, { recursive: true });
     cb(null, folder);
@@ -34,7 +23,9 @@ const fileFilter = (req, file, cb) => {
     cb(null, true);
   } else {
     cb(
-      new Error("Invalid file type. Only JPEG, PNG, and WEBP images are allowed."),
+      new Error(
+        "Invalid file type. Only JPEG, PNG, and WEBP images are allowed.",
+      ),
       false,
     );
   }

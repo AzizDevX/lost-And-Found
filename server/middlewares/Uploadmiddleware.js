@@ -3,13 +3,12 @@ import path from "path";
 import fs from "fs";
 
 /**
- * Creates a multer upload middleware for any destination folder.
  *
- * @param {Function} getFolderPath - (req) => string : dynamic folder path based on request
+ * @param {Function} getFolderPath
  * @param {Object} options
- * @param {number} options.maxSizeMB - max file size in MB (default: 5)
- * @param {string[]} options.allowedTypes - allowed mime types (default: images only)
- * @param {string} options.filename - custom filename without extension (default: Date.now)
+ * @param {number} options.maxSizeMB
+ * @param {string[]} options.allowedTypes
+ * @param {string} options.filename
  */
 export function createUploader(getFolderPath, options = {}) {
   const {

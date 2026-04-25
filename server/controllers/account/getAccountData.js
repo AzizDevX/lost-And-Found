@@ -28,6 +28,8 @@ export async function getAccountData(req, res) {
         email: user.email,
         year: details?.year ?? null,
         specialty: details?.specialty ?? null,
+        isBanned: user.isBanned ?? false,
+        banExpiresAt: user.banExpiresAt ?? null,
       },
     });
   } catch (err) {

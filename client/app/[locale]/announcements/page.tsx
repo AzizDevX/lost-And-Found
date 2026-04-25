@@ -51,6 +51,8 @@ interface FormErrors {
   images?: string;
   contact?: string;
   contactEmail?: string;
+  contactFacebook?: string;
+  contactInstagram?: string;
   phone?: string;
   general?: string;
 }
@@ -223,6 +225,36 @@ function validateTunisianPhone(phone: string): boolean {
   if (/^(.)\1{7}$/.test(digits)) return false; // reject 00000000, 11111111, etc.
   if (!/^\d{8}$/.test(digits)) return false;
   return true;
+}
+
+// ─── Social URL validators ────────────────────────────────────────────────────
+
+function validateFacebookUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      (url.hostname === "www.facebook.com" ||
+        url.hostname === "facebook.com" ||
+        url.hostname === "www.fb.com" ||
+        url.hostname === "fb.com") &&
+      url.pathname.length > 1
+    );
+  } catch {
+    return false;
+  }
+}
+
+function validateInstagramUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      (url.hostname === "www.instagram.com" ||
+        url.hostname === "instagram.com") &&
+      url.pathname.length > 1
+    );
+  } catch {
+    return false;
+  }
 }
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
@@ -721,8 +753,9 @@ export default function AnnouncementsPage() {
     // Category
     if (!form.category) errs.category = t("errors.categoryRequired");
 
-    // Image
-    if (imagePreviews.length === 0) errs.images = t("errors.imageRequired");
+    // Image — required only for "found", optional for "lost"
+    if (postType === "found" && imagePreviews.length === 0)
+      errs.images = t("errors.imageRequired");
 
     // Contact — at least one required
     const hasContact =
@@ -746,20 +779,20 @@ export default function AnnouncementsPage() {
       }
     }
 
-    // Facebook username — no spaces, no full URLs
-    if (form.facebook.trim()) {
-      const fb = form.facebook.trim();
-      if (/\s/.test(fb) || fb.includes("facebook.com")) {
-        errs.contact = t("errors.usernameInvalid");
-      }
+    // Facebook — must be a valid full Facebook URL
+    if (form.facebook.trim() && !validateFacebookUrl(form.facebook.trim())) {
+      errs.contactFacebook =
+        locale === "fr"
+          ? "URL Facebook invalide. Collez votre URL de profil complète (ex: https://www.facebook.com/votrenom)."
+          : "Invalid Facebook URL. Paste your full profile URL (e.g. https://www.facebook.com/yourname).";
     }
 
-    // Instagram username — no spaces, no full URLs
-    if (form.instagram.trim()) {
-      const ig = form.instagram.trim();
-      if (/\s/.test(ig) || ig.includes("instagram.com")) {
-        errs.contact = t("errors.usernameInvalid");
-      }
+    // Instagram — must be a valid full Instagram URL
+    if (form.instagram.trim() && !validateInstagramUrl(form.instagram.trim())) {
+      errs.contactInstagram =
+        locale === "fr"
+          ? "URL Instagram invalide. Collez votre URL de profil complète (ex: https://www.instagram.com/votrenom)."
+          : "Invalid Instagram URL. Paste your full profile URL (e.g. https://www.instagram.com/yourname).";
     }
 
     setErrors(errs);
@@ -1053,6 +1086,63 @@ export default function AnnouncementsPage() {
                     </span>
                   </div>
                 )}
+                {/* Contact info rows */}
+                {form.facebook.trim() && (
+                  <div className={styles.modalRow}>
+                    <span className={styles.modalLabel}>
+                      <FacebookIcon /> Facebook
+                    </span>
+                    <a
+                      href={form.facebook.trim()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.modalContactLink}
+                    >
+                      {form.facebook.trim()}
+                    </a>
+                  </div>
+                )}
+                {form.instagram.trim() && (
+                  <div className={styles.modalRow}>
+                    <span className={styles.modalLabel}>
+                      <InstagramIcon /> Instagram
+                    </span>
+                    <a
+                      href={form.instagram.trim()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.modalContactLink}
+                    >
+                      {form.instagram.trim()}
+                    </a>
+                  </div>
+                )}
+                {form.phone.trim() && (
+                  <div className={styles.modalRow}>
+                    <span className={styles.modalLabel}>
+                      <PhoneIcon /> {locale === "fr" ? "Téléphone" : "Phone"}
+                    </span>
+                    <a
+                      href={`tel:${form.phone.trim()}`}
+                      className={styles.modalContactLink}
+                    >
+                      {form.phone.trim()}
+                    </a>
+                  </div>
+                )}
+                {form.email.trim() && (
+                  <div className={styles.modalRow}>
+                    <span className={styles.modalLabel}>
+                      <MailIcon /> {locale === "fr" ? "E-mail" : "Email"}
+                    </span>
+                    <a
+                      href={`mailto:${form.email.trim()}`}
+                      className={styles.modalContactLink}
+                    >
+                      {form.email.trim()}
+                    </a>
+                  </div>
+                )}
                 <div className={styles.modalActions}>
                   <button
                     className={styles.cancelBtn}
@@ -1280,6 +1370,20 @@ export default function AnnouncementsPage() {
                     <div className={styles.formGroup}>
                       <label className={styles.formLabel}>
                         {t("compose.image.label")}
+                        {postType === "lost" && (
+                          <span
+                            style={{
+                              fontSize: 10,
+                              fontWeight: 400,
+                              color: "var(--text-muted)",
+                              marginLeft: 6,
+                              textTransform: "none",
+                              letterSpacing: 0,
+                            }}
+                          >
+                            ({locale === "fr" ? "optionnel" : "optional"})
+                          </span>
+                        )}
                         {imagePreviews.length > 0 && (
                           <span className={styles.imageCount}>
                             {" "}
@@ -1371,17 +1475,42 @@ export default function AnnouncementsPage() {
                           <FacebookIcon />
                         </span>
                         <input
-                          type="text"
-                          className={styles.input}
-                          placeholder={t("compose.contact.facebook")}
+                          type="url"
+                          className={`${styles.input}${errors.contactFacebook ? ` ${styles.inputError}` : ""}`}
+                          placeholder={
+                            locale === "fr"
+                              ? "https://www.facebook.com/votrenom"
+                              : "https://www.facebook.com/yourname"
+                          }
                           value={form.facebook}
                           onChange={(e) => {
                             setField("facebook", e.target.value);
-                            setErrors((er) => ({ ...er, contact: undefined }));
+                            setErrors((er) => ({
+                              ...er,
+                              contact: undefined,
+                              contactFacebook: undefined,
+                            }));
                           }}
                           disabled={isPending}
                         />
                       </div>
+                      <p
+                        style={{
+                          fontSize: 11,
+                          color: "var(--text-muted)",
+                          marginTop: 3,
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {locale === "fr"
+                          ? "Ouvrez votre profil Facebook et copiez l'URL complète."
+                          : "Open your Facebook profile and copy the full URL."}
+                      </p>
+                      {errors.contactFacebook && (
+                        <p className={styles.fieldError}>
+                          {errors.contactFacebook}
+                        </p>
+                      )}
                     </div>
                     {/* Instagram */}
                     <div className={styles.formGroup}>
@@ -1390,17 +1519,42 @@ export default function AnnouncementsPage() {
                           <InstagramIcon />
                         </span>
                         <input
-                          type="text"
-                          className={styles.input}
-                          placeholder={t("compose.contact.instagram")}
+                          type="url"
+                          className={`${styles.input}${errors.contactInstagram ? ` ${styles.inputError}` : ""}`}
+                          placeholder={
+                            locale === "fr"
+                              ? "https://www.instagram.com/votrenom"
+                              : "https://www.instagram.com/yourname"
+                          }
                           value={form.instagram}
                           onChange={(e) => {
                             setField("instagram", e.target.value);
-                            setErrors((er) => ({ ...er, contact: undefined }));
+                            setErrors((er) => ({
+                              ...er,
+                              contact: undefined,
+                              contactInstagram: undefined,
+                            }));
                           }}
                           disabled={isPending}
                         />
                       </div>
+                      <p
+                        style={{
+                          fontSize: 11,
+                          color: "var(--text-muted)",
+                          marginTop: 3,
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {locale === "fr"
+                          ? "Ouvrez votre profil Instagram et copiez l'URL complète."
+                          : "Open your Instagram profile and copy the full URL."}
+                      </p>
+                      {errors.contactInstagram && (
+                        <p className={styles.fieldError}>
+                          {errors.contactInstagram}
+                        </p>
+                      )}
                     </div>
                     {/* Phone — Tunisian format */}
                     <div className={styles.formGroup}>
@@ -1592,24 +1746,24 @@ export default function AnnouncementsPage() {
                     <div className={styles.postContacts}>
                       {post.contact.facebook && (
                         <a
-                          href={`https://facebook.com/${post.contact.facebook}`}
+                          href={post.contact.facebook}
                           target="_blank"
                           rel="noopener noreferrer"
                           className={styles.contactChip}
                         >
                           <FacebookIcon />
-                          {post.contact.facebook}
+                          {locale === "fr" ? "Facebook" : "Facebook"}
                         </a>
                       )}
                       {post.contact.instagram && (
                         <a
-                          href={`https://instagram.com/${post.contact.instagram}`}
+                          href={post.contact.instagram}
                           target="_blank"
                           rel="noopener noreferrer"
                           className={styles.contactChip}
                         >
                           <InstagramIcon />
-                          {post.contact.instagram}
+                          {locale === "fr" ? "Instagram" : "Instagram"}
                         </a>
                       )}
                       {post.contact.phone && (

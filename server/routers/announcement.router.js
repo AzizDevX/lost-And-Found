@@ -12,7 +12,7 @@ import {
   statsLiveSSE,
   getMyAnnouncements,
   cancelAnnouncement,
-  closeAnnouncement,
+  closeWithoutMatchAnnouncement,
   confirmAnnouncement,
   resubmitAnnouncement,
 } from "../controllers/announcement/announcement.js";
@@ -54,34 +54,25 @@ Router.get("/announcements/my", authMiddleware, getMyAnnouncements);
 
 /**
  * PATCH /api/announcements/:id/cancel
- * Author withdraws a PENDING announcement before admin reviews it.
- * ✅ pending only.  ❌ accepted → use /close instead.
- * Images deleted.  Admin: view or delete only (cannot reactivate).
  */
 Router.patch("/announcements/:id/cancel", authMiddleware, cancelAnnouncement);
 
 /**
- * PATCH /api/announcements/:id/close
- * Author closes an ACCEPTED announcement — "I gave up / didn't find it."
- * ✅ accepted only.  ❌ pending → use /cancel instead.
- * Images KEPT.  Admin CAN reactivate via admin /reactivate route.
- * Body: { reason?: string (max 300 chars) }
+ * PATCH /api/announcements/:id/close-without-match
  */
-Router.patch("/announcements/:id/close", authMiddleware, closeAnnouncement);
+Router.patch(
+  "/announcements/:id/close-without-match",
+  authMiddleware,
+  closeWithoutMatchAnnouncement,
+);
 
 /**
  * PATCH /api/announcements/:id/confirm
- * Author confirms item was found / returned to them.
- * ✅ accepted only.
- * Images KEPT.  Admin: view or delete only (cannot reactivate).
  */
 Router.patch("/announcements/:id/confirm", authMiddleware, confirmAnnouncement);
 
 /**
  * PATCH /api/announcements/:id/resubmit
- * Author re-appeals a REJECTED announcement — puts it back to "pending".
- * Optionally accepts new images (multipart/form-data, field "images").
- * ❌ cancelled, closed, confirmed cannot be resubmitted.
  */
 Router.patch(
   "/announcements/:id/resubmit",

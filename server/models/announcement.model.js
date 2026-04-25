@@ -1,7 +1,5 @@
 import mongoose from "mongoose";
 
-// ─── Constants (mirrors frontend) ─────────────────────────────────────────────
-
 export const ANNOUNCEMENT_TYPES = ["lost", "found"];
 
 export const ANNOUNCEMENT_CATEGORIES = [
@@ -17,8 +15,6 @@ export const ANNOUNCEMENT_CATEGORIES = [
 ];
 
 export const ANNOUNCEMENT_STATUSES = ["pending", "accepted", "rejected"];
-
-// ─── Schema ───────────────────────────────────────────────────────────────────
 
 const announcementSchema = new mongoose.Schema(
   {
@@ -78,9 +74,6 @@ const announcementSchema = new mongoose.Schema(
       index: true,
     },
 
-    // ── Admin-side resolution ──────────────────────────────────────────────
-
-    /** Admin toggled: item physically returned/claimed. Drives "Objets Rendus" stat. */
     isReturned: {
       type: Boolean,
       default: false,
@@ -105,16 +98,6 @@ const announcementSchema = new mongoose.Schema(
       default: null,
     },
 
-    // ── User-side resolution ───────────────────────────────────────────────
-
-    /**
-     * Set by the author when the item has been found/returned to them.
-     * Once confirmed, the announcement is hidden from the public feed.
-     * Admin can only view or delete — cannot reactivate.
-     *
-     * false  → not yet confirmed by user
-     * true   → user confirmed resolution → removed from public feed (permanent)
-     */
     userConfirmed: {
       type: Boolean,
       default: false,
@@ -126,19 +109,6 @@ const announcementSchema = new mongoose.Schema(
       default: null,
     },
 
-    // ── User-side cancellation (pending only) ──────────────────────────────
-
-    /**
-     * Author withdrew their OWN PENDING announcement before admin review.
-     * This is the only situation where "cancelled" applies.
-     *
-     * Rules:
-     *   - Only allowed when status = "pending".
-     *   - Images deleted immediately (announcement was never public).
-     *   - Admin can only view or delete — cannot reactivate.
-     *
-     * For accepted announcements the user closes them via `closedByUser` below.
-     */
     cancelledByUser: {
       type: Boolean,
       default: false,
@@ -150,33 +120,18 @@ const announcementSchema = new mongoose.Schema(
       default: null,
     },
 
-    // ── User-side closure (accepted, gave up / no match found) ────────────
-
-    /**
-     * Author closes an ACCEPTED announcement — they didn't find their item
-     * or gave up searching. "Close without match / not found."
-     *
-     * Key differences from cancelledByUser:
-     *   - Only allowed when status = "accepted".
-     *   - Images are KEPT (the post was public and real).
-     *   - Admin CAN reactivate it back to accepted (unlike cancelled/confirmed).
-     *
-     * false  → not closed by user
-     * true   → user closed without resolution → hidden from public feed,
-     *          but admin can reopen it.
-     */
-    closedByUser: {
+    closedWithoutMatch: {
       type: Boolean,
       default: false,
       index: true,
     },
 
-    closedAt: {
+    closedWithoutMatchAt: {
       type: Date,
       default: null,
     },
 
-    closedReason: {
+    closedWithoutMatchReason: {
       type: String,
       trim: true,
       maxlength: 300,
@@ -186,21 +141,17 @@ const announcementSchema = new mongoose.Schema(
   { timestamps: true },
 );
 
-// ─── Indexes for feed queries ─────────────────────────────────────────────────
-
 announcementSchema.index({ status: 1, createdAt: -1 });
 announcementSchema.index({ status: 1, type: 1, createdAt: -1 });
 announcementSchema.index({ status: 1, category: 1, createdAt: -1 });
 announcementSchema.index({ status: 1, isReturned: 1 });
-// Public feed: exclude user-cancelled, user-confirmed, and user-closed
 announcementSchema.index({
   status: 1,
   cancelledByUser: 1,
   userConfirmed: 1,
-  closedByUser: 1,
+  closedWithoutMatch: 1,
   createdAt: -1,
 });
-// For author's history view
 announcementSchema.index({ author: 1, createdAt: -1 });
 
 const Announcement =

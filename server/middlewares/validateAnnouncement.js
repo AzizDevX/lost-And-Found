@@ -4,7 +4,33 @@ import {
   ANNOUNCEMENT_CATEGORIES,
 } from "../models/announcement.model.js";
 
-// ─── Tunisian phone validator ─────────────────────────────────────────────────
+function isValidFacebookUrl(value) {
+  try {
+    const url = new URL(value);
+    return (
+      (url.hostname === "www.facebook.com" ||
+        url.hostname === "facebook.com" ||
+        url.hostname === "www.fb.com" ||
+        url.hostname === "fb.com") &&
+      url.pathname.length > 1
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isValidInstagramUrl(value) {
+  try {
+    const url = new URL(value);
+    return (
+      (url.hostname === "www.instagram.com" ||
+        url.hostname === "instagram.com") &&
+      url.pathname.length > 1
+    );
+  } catch {
+    return false;
+  }
+}
 
 function isValidTunisianPhone(phone) {
   const cleaned = phone.replace(/[\s\-().]/g, "");
@@ -16,8 +42,6 @@ function isValidTunisianPhone(phone) {
   if (/^(.)\1{7}$/.test(digits)) return false;
   return /^\d{8}$/.test(digits);
 }
-
-// ─── Create Announcement schema ───────────────────────────────────────────────
 
 const createAnnouncementSchema = Joi.object({
   type: Joi.string()
@@ -43,8 +67,40 @@ const createAnnouncementSchema = Joi.object({
   }),
 
   contact: Joi.object({
-    facebook: Joi.string().trim().max(100).allow("", null).optional(),
-    instagram: Joi.string().trim().max(100).allow("", null).optional(),
+    facebook: Joi.string()
+      .trim()
+      .max(300)
+      .allow("", null)
+      .optional()
+      .custom((value, helpers) => {
+        if (value && value.trim() !== "" && !isValidFacebookUrl(value.trim())) {
+          return helpers.error("any.invalid");
+        }
+        return value;
+      })
+      .messages({
+        "any.invalid":
+          "Invalid Facebook URL. Please paste your full profile URL (e.g. https://www.facebook.com/yourname).",
+      }),
+    instagram: Joi.string()
+      .trim()
+      .max(300)
+      .allow("", null)
+      .optional()
+      .custom((value, helpers) => {
+        if (
+          value &&
+          value.trim() !== "" &&
+          !isValidInstagramUrl(value.trim())
+        ) {
+          return helpers.error("any.invalid");
+        }
+        return value;
+      })
+      .messages({
+        "any.invalid":
+          "Invalid Instagram URL. Please paste your full profile URL (e.g. https://www.instagram.com/yourname).",
+      }),
     phone: Joi.string()
       .trim()
       .max(20)
@@ -73,7 +129,6 @@ const createAnnouncementSchema = Joi.object({
   })
     .required()
     .custom((value, helpers) => {
-      // At least one contact method must be non-empty
       const hasContact = Object.values(value).some(
         (v) => v && v.toString().trim() !== "",
       );
@@ -88,8 +143,6 @@ const createAnnouncementSchema = Joi.object({
       "any.required": "Contact information is required.",
     }),
 });
-
-// ─── Admin review schema ──────────────────────────────────────────────────────
 
 const reviewAnnouncementSchema = Joi.object({
   status: Joi.string().valid("accepted", "rejected").required().messages({
@@ -107,24 +160,13 @@ const reviewAnnouncementSchema = Joi.object({
   isReturned: Joi.boolean().optional(),
 });
 
-// ─── Mark returned schema (separate endpoint) ─────────────────────────────────
-
 const markReturnedSchema = Joi.object({
   isReturned: Joi.boolean().required().messages({
     "any.required": "isReturned (true/false) is required.",
   }),
 });
 
-// ─── Middleware factories ─────────────────────────────────────────────────────
-
 export function validateCreateAnnouncement(req, res, next) {
-  // Multer delivers multipart fields as flat strings — bracket notation is NOT
-  // automatically expanded into nested objects (unlike express.urlencoded with
-  // extended:true).  We normalise here so Joi sees the shape it expects.
-  //
-  // Supports both notations the client might send:
-  //   contact[facebook]  → req.body["contact[facebook]"]   (bracket string key)
-  //   contact.facebook   → req.body.contact already a string (rare, ignore)
   if (!req.body.contact || typeof req.body.contact !== "object") {
     req.body.contact = {
       facebook:
@@ -136,14 +178,12 @@ export function validateCreateAnnouncement(req, res, next) {
     };
   }
 
-  // Images are validated separately (via multer + custom check in controller)
   const { error, value } = createAnnouncementSchema.validate(req.body, {
     abortEarly: true,
     stripUnknown: true,
   });
 
   if (error) {
-    // Clean up any uploaded files if validation fails
     if (req.files?.length) {
       import("fs").then(({ default: fs }) => {
         req.files.forEach((f) => {

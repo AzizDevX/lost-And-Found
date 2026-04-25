@@ -144,6 +144,10 @@
     },
     "announcements": {
       "title": "My Announcements",
+      "imagesDeleted": {
+        "rejected": "Images were automatically deleted after rejection.",
+        "cancelled": "Images were automatically deleted after cancellation."
+      },
       "tabs": {
         "pending": "Pending",
         "active": "Active",
@@ -170,7 +174,8 @@
         "accepted": "Active",
         "rejected": "Rejected",
         "cancelled": "Cancelled",
-        "confirmed": "Resolved"
+        "confirmed": "Resolved",
+        "closedWithoutMatch": "Closed – No Match"
       },
       "actions": {
         "cancel": "Cancel",
@@ -324,7 +329,8 @@
       "submitting": "Posting..."
     },
     "post": {
-      "imageAlt": "Item photo"
+      "imageAlt": "Item photo",
+      "imageNotAvailable": "Photo not available"
     },
     "empty": {
       "title": "No announcements yet",

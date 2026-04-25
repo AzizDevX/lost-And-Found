@@ -12,9 +12,9 @@ import {
   adminListAnnouncements,
   adminGetAnnouncement,
   adminReviewAnnouncement,
-  adminReactivateAnnouncement,
   adminMarkReturned,
   adminDeleteAnnouncement,
+  adminCloseWithoutMatch,
 } from "../controllers/admin/adminAnnouncement.js";
 import {
   adminListUsers,
@@ -47,20 +47,6 @@ Router.post("/auth/logout", adminLogout);
 
 // ── Announcement Management ────────────────────────────────────────────────────
 
-/**
- * GET /api/admin/announcements
- * Query: status (pending|accepted|rejected|cancelled|confirmed|closed|all),
- *        type, category, page, limit
- *
- * Status meanings:
- *   pending   — awaiting admin review
- *   accepted  — live on public feed
- *   rejected  — failed review, images deleted
- *   cancelled — user withdrew their PENDING post (images deleted, read-only)
- *   confirmed — user found item (images kept, read-only)
- *   closed    — user gave up on ACCEPTED post (images kept, admin CAN reactivate)
- *   all       — everything
- */
 Router.get("/announcements", adminMiddleware, adminListAnnouncements);
 
 /** GET /api/admin/announcements/:id */
@@ -68,18 +54,7 @@ Router.get("/announcements/:id", adminMiddleware, adminGetAnnouncement);
 
 /**
  * PATCH /api/admin/announcements/:id/review
- * Body: { status: "accepted"|"rejected", rejectionReason?: string }
- *
- * Allowed transitions:
- *   pending  → accepted  ✓
- *   pending  → rejected  ✓  (images deleted)
- *   accepted → rejected  ✓  (force-reject: images deleted)
- *   rejected → accepted  ✓  (reverse mistaken rejection)
- *
- * NOT allowed — returns 400:
- *   cancelled → any  ✗  (use DELETE to remove)
- *   confirmed → any  ✗  (use DELETE to remove)
- *   closed    → any  ✗  (use /reactivate to restore, or DELETE to remove)
+
  */
 Router.patch(
   "/announcements/:id/review",
@@ -89,25 +64,8 @@ Router.patch(
 );
 
 /**
- * PATCH /api/admin/announcements/:id/reactivate
- * Restore a CLOSED announcement back to accepted (active on feed).
- *
- * Only works on closedByUser = true announcements.
- * Images are already kept when user closes — nothing to restore.
- *
- * cancelled and confirmed are permanently read-only — cannot be reactivated.
- */
-Router.patch(
-  "/announcements/:id/reactivate",
-  adminMiddleware,
-  adminReactivateAnnouncement,
-);
-
-/**
  * PATCH /api/admin/announcements/:id/returned
- * Body: { isReturned: true|false }
- * Toggle "item physically returned" flag.
- * Only on accepted, non-cancelled, non-closed announcements.
+
  */
 Router.patch(
   "/announcements/:id/returned",
@@ -117,10 +75,18 @@ Router.patch(
 );
 
 /**
+ * PATCH /api/admin/announcements/:id/admin-close
+
+ */
+Router.patch(
+  "/announcements/:id/admin-close",
+  adminMiddleware,
+  adminCloseWithoutMatch,
+);
+
+/**
  * DELETE /api/admin/announcements/:id
- * Hard delete — any admin role can delete any announcement regardless of status.
- * Always deletes images from disk.
- * Use for spam, illegal content, or any post that should not exist.
+
  */
 Router.delete("/announcements/:id", adminMiddleware, adminDeleteAnnouncement);
 

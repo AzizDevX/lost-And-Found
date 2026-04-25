@@ -15,7 +15,8 @@ type AnnouncementStatus =
   | "accepted"
   | "rejected"
   | "cancelled"
-  | "confirmed";
+  | "confirmed"
+  | "closedWithoutMatch";
 type AnnouncementType = "lost" | "found";
 
 interface AccountData {
@@ -25,7 +26,7 @@ interface AccountData {
   year: Year | "";
   specialty: Specialty | "";
   userAvatar?: string;
-  banned?: boolean;
+  isBanned?: boolean;
   banExpiresAt?: string | null; // ISO date string or null for lifetime
 }
 
@@ -381,6 +382,8 @@ function AnnouncementCard({
   const t = useTranslations("account");
   const tAnn = useTranslations("announcements");
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  // Track which image indices failed to load
+  const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
 
   const statusColor: Record<AnnouncementStatus, string> = {
     pending: styles.statusPending,
@@ -388,6 +391,7 @@ function AnnouncementCard({
     rejected: styles.statusRejected,
     cancelled: styles.statusCancelled,
     confirmed: styles.statusConfirmed,
+    closedWithoutMatch: styles.statusClosed,
   };
 
   const isLoading = actionLoading === ann.id;
@@ -440,20 +444,37 @@ function AnnouncementCard({
         <p className={styles.annDescription}>{ann.description}</p>
 
         {/* Images */}
-        {ann.images && ann.images.length > 0 && (
-          <div className={styles.annImages}>
-            {ann.images.map((img, i) => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                key={i}
-                src={imageSrc(img)}
-                alt={tAnn("post.imageAlt")}
-                className={styles.annThumb}
-                onClick={() => setLightboxSrc(imageSrc(img))}
-              />
-            ))}
+        {ds === "rejected" || ds === "cancelled" ? (
+          // These statuses always have images deleted — show one clean message, no image grid
+          <div className={styles.annImagesDeleted}>
+            <ImageIcon />
+            <span>{t(`announcements.imagesDeleted.${ds}`)}</span>
           </div>
-        )}
+        ) : ann.images && ann.images.length > 0 ? (
+          <div className={styles.annImages}>
+            {ann.images.map((img, i) =>
+              imgErrors[i] ? (
+                // Image failed to load — show inline "not available" chip instead
+                <div key={i} className={styles.annImageError}>
+                  <ImageIcon />
+                  <span>{tAnn("post.imageNotAvailable")}</span>
+                </div>
+              ) : (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={i}
+                  src={imageSrc(img)}
+                  alt={tAnn("post.imageAlt")}
+                  className={styles.annThumb}
+                  onClick={() => !imgErrors[i] && setLightboxSrc(imageSrc(img))}
+                  onError={() =>
+                    setImgErrors((prev) => ({ ...prev, [i]: true }))
+                  }
+                />
+              ),
+            )}
+          </div>
+        ) : null}
 
         {/* Contact info */}
         {ann.contact && Object.values(ann.contact).some(Boolean) && (
@@ -468,8 +489,8 @@ function AnnouncementCard({
         {/* Actions — only show on non-terminal displayStatuses */}
         {(onCancel || onConfirm || onClose) && (
           <div className={styles.annActions}>
-            {/* Cancel: allowed for pending and accepted (not yet cancelled/confirmed/rejected) */}
-            {onCancel && (ds === "pending" || ds === "accepted") && (
+            {/* Cancel: only allowed for pending posts */}
+            {onCancel && ds === "pending" && (
               <button
                 className={styles.annBtnDanger}
                 onClick={() => onCancel(ann.id)}
@@ -615,7 +636,7 @@ export default function AccountPage() {
         userAvatar: d.userAvatar ?? "",
       }));
       if (d.userAvatar) setAvatarPreview(avatarSrc(d.userAvatar));
-      if (d.banned) {
+      if (d.isBanned) {
         setBanned(true);
         setBanExpiresAt(d.banExpiresAt ?? null);
       }
@@ -631,7 +652,14 @@ export default function AccountPage() {
       const { data } = await api.get<MyAnnouncementsResponse>(
         "/api/announcements/my",
       );
-      setMyAnnouncements(data.data ?? []);
+      // Normalize _id → id (Mongoose returns _id, interface expects id)
+      const normalized = (data.data ?? []).map(
+        (a: Announcement & { _id?: string }) => ({
+          ...a,
+          id: a.id ?? a._id ?? "",
+        }),
+      );
+      setMyAnnouncements(normalized);
     } catch {
       // silent
     } finally {
@@ -667,8 +695,16 @@ export default function AccountPage() {
             a.id === id ? { ...a, displayStatus: "confirmed" } : a,
           ),
         );
+      } else if (action === "close") {
+        // "Close without match" — accepted post, user gave up. Permanently locked.
+        await api.patch(`/api/announcements/${id}/close-without-match`, {});
+        setMyAnnouncements((prev) =>
+          prev.map((a) =>
+            a.id === id ? { ...a, displayStatus: "closedWithoutMatch" } : a,
+          ),
+        );
       } else {
-        // cancel & close both call /cancel
+        // cancel — pending post only
         await api.patch(`/api/announcements/${id}/cancel`);
         setMyAnnouncements((prev) =>
           prev.map((a) =>
@@ -691,7 +727,9 @@ export default function AccountPage() {
     (a) => a.displayStatus === "accepted",
   );
   const historyAnns = myAnnouncements.filter((a) =>
-    ["rejected", "cancelled", "confirmed"].includes(a.displayStatus),
+    ["rejected", "cancelled", "confirmed", "closedWithoutMatch"].includes(
+      a.displayStatus,
+    ),
   );
 
   // ── Avatar upload ──────────────────────────────────────────────────────────
@@ -899,16 +937,12 @@ export default function AccountPage() {
               <div className={styles.banBannerContent}>
                 <p className={styles.banBannerTitle}>
                   {banExpiresAt
-                    ? t("ban.titleTemporary")
-                    : t("ban.titleLifetime")}
-                </p>
-                <p className={styles.banBannerDesc}>
-                  {banExpiresAt
-                    ? t("ban.descriptionTemporary", {
+                    ? t("ban.titleTemporary", {
                         date: formatBanDate(banExpiresAt, locale),
                       })
-                    : t("ban.descriptionLifetime")}
+                    : t("ban.titleLifetime")}
                 </p>
+                <p className={styles.banBannerDesc}>{t("ban.message")}</p>
               </div>
             </div>
           )}
